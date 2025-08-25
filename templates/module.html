@@ -1,0 +1,2191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ level1_name }} - 模块详情</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#8B5CF6',
+                        dark: '#121212',
+                        'dark-card': '#1E1E1E'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <script>
+        // 批量删除功能实现
+        document.addEventListener('DOMContentLoaded', function() {
+            // 显示批量操作工具栏
+            const skillCheckboxes = document.querySelectorAll('.skill-checkbox');
+            const batchActions = document.getElementById('batch-actions');
+            const selectAllCheckbox = document.getElementById('select-all-skills');
+            const batchDeleteBtn = document.getElementById('batch-delete-btn');
+            const selectedCount = document.getElementById('selected-count');
+            const importBtn = document.getElementById('import-btn');
+            const exportBtn = document.getElementById('export-btn');
+            const searchInput = document.getElementById('skill-search');
+            const categoryFilter = document.getElementById('category-filter');
+
+            // 显示批量操作工具栏
+            if (skillCheckboxes.length > 0) {
+                batchActions.classList.remove('hidden');
+            }
+
+            // 更新选中计数和批量删除按钮状态
+            function updateSelectionStatus() {
+                const checkedBoxes = document.querySelectorAll('.skill-checkbox:checked');
+                const count = checkedBoxes.length;
+                selectedCount.textContent = `已选择: ${count}`;
+
+                if (count > 0) {
+                    batchDeleteBtn.disabled = false;
+                    batchDeleteBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                } else {
+                    batchDeleteBtn.disabled = true;
+                    batchDeleteBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            }
+
+            // 单个复选框点击事件
+            skillCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateSelectionStatus);
+            });
+
+            // 全选复选框点击事件
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', function() {
+                    skillCheckboxes.forEach(checkbox => {
+                        checkbox.checked = this.checked;
+                    });
+                    updateSelectionStatus();
+                });
+            }
+
+            // 批量删除按钮点击事件
+            if (batchDeleteBtn) {
+                batchDeleteBtn.addEventListener('click', function() {
+                    if (confirm('确定要删除选中的技能吗？')) {
+                        const checkedBoxes = document.querySelectorAll('.skill-checkbox:checked');
+                        checkedBoxes.forEach(checkbox => {
+                            const skillCard = checkbox.closest('div');
+                            // 添加删除动画
+                            skillCard.style.opacity = '0';
+                            skillCard.style.transform = 'translateY(20px)';
+                            setTimeout(() => {
+                                skillCard.remove();
+                                updateSelectionStatus();
+                            }, 300);
+                        });
+
+                        // 显示成功提示
+                        const notification = document.createElement('div');
+                        notification.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50 transform transition-all duration-300 translate-y-0';
+                        notification.textContent = '已成功删除选中的技能';
+                        document.body.appendChild(notification);
+
+                        // 3秒后隐藏提示
+                        setTimeout(() => {
+                            notification.classList.add('translate-y-20');
+                            setTimeout(() => document.body.removeChild(notification), 300);
+                        }, 3000);
+                    }
+                });
+            }
+
+            // 导入按钮点击事件
+            if (importBtn) {
+                importBtn.addEventListener('click', function() {
+                    // 显示导入模态框
+                    const modal = document.createElement('div');
+                    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+                    modal.innerHTML = `
+                        <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md transform transition-all">
+                            <h3 className="text-xl font-bold mb-4">导入技能</h3>
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">选择文件</label>
+                                <input type="file" accept=".json" className="border border-gray-300 rounded-md px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                            </div>
+                            <p className="text-sm text-gray-500 mb-4">支持JSON格式文件导入</p>
+                            <div className="flex justify-end space-x-3">
+                                <button id="cancel-import" className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">取消</button>
+                                <button id="confirm-import" className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90">导入</button>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(modal);
+
+                    // 取消按钮事件
+                    document.getElementById('cancel-import').addEventListener('click', function() {
+                        modal.remove();
+                    });
+
+                    // 确认导入按钮事件
+                    document.getElementById('confirm-import').addEventListener('click', function() {
+                        // 模拟导入过程
+                        modal.querySelector('.max-w-md').innerHTML = `
+                            <div className="text-center p-8">
+                                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto mb-4"></div>
+                                <p className="text-gray-700 mb-2">导入中...</p>
+                                <p className="text-sm text-gray-500">请稍候，正在处理文件</p>
+                            </div>
+                        `;
+
+                        // 3秒后显示成功信息
+                        setTimeout(() => {
+                            modal.querySelector('.max-w-md').innerHTML = `
+                                <div className="text-center p-8">
+                                    <div className="text-green-500 text-5xl mb-4"><i className="fa fa-check-circle"></i></div>
+                                    <h4 className="text-xl font-bold text-gray-900 mb-2">导入成功</h4>
+                                    <p className="text-gray-600 mb-6">已成功导入8个技能</p>
+                                    <button id="close-import" className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90">完成</button>
+                                </div>
+                            `;
+
+                            // 关闭按钮事件
+                            document.getElementById('close-import').addEventListener('click', function() {
+                                modal.remove();
+                                // 刷新页面或更新技能列表
+                                location.reload();
+                            });
+                        }, 3000);
+                    });
+                });
+            }
+
+            // 导出按钮点击事件
+            if (exportBtn) {
+                exportBtn.addEventListener('click', function() {
+                    // 模拟导出过程
+                    const notification = document.createElement('div');
+                    notification.className = 'fixed bottom-4 right-4 bg-blue-500 text-white px-4 py-2 rounded shadow-lg z-50 transform transition-all duration-300 translate-y-0';
+                    notification.textContent = '正在导出技能数据...';
+                    document.body.appendChild(notification);
+
+                    // 2秒后显示下载链接
+                    setTimeout(() => {
+                        notification.innerHTML = '导出成功！<a href="#" class="underline ml-1">点击下载</a>';
+                        notification.querySelector('a').addEventListener('click', function(e) {
+                            e.preventDefault();
+                            // 模拟文件下载
+                            const blob = new Blob(['{"skills": []}'], {type: 'application/json'});
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'skills_export.json';
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                            notification.textContent = '已成功下载导出文件';
+
+                            // 3秒后隐藏提示
+                            setTimeout(() => {
+                                notification.classList.add('translate-y-20');
+                                setTimeout(() => document.body.removeChild(notification), 300);
+                            }, 3000);
+                        });
+                    }, 2000);
+                });
+            }
+
+            // 防抖函数
+            function debounce(func, delay) {
+                let timeoutId;
+                return function() {
+                    const context = this;
+                    const args = arguments;
+                    clearTimeout(timeoutId);
+                    timeoutId = setTimeout(() => {
+                        func.apply(context, args);
+                    }, delay);
+                };
+            }
+
+            // 筛选技能函数
+            function filterSkills() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const category = categoryFilter.value;
+                const skillCards = document.querySelectorAll('[data-skill-card]');
+                let hasVisibleCards = false;
+
+                skillCards.forEach(card => {
+                    const skillName = card.querySelector('[data-skill-name]').textContent.toLowerCase();
+                    const skillCategory = card.getAttribute('data-skill-category');
+                    const matchesSearch = skillName.includes(searchTerm);
+                    const matchesCategory = category === 'all' || skillCategory === category;
+
+                    if (matchesSearch && matchesCategory) {
+                        card.classList.remove('hidden');
+                        hasVisibleCards = true;
+                    } else {
+                        card.classList.add('hidden');
+                    }
+                });
+
+                // 显示或隐藏无结果提示
+                const noResults = document.getElementById('no-search-results');
+                if (noResults) {
+                    if (hasVisibleCards) {
+                        noResults.classList.add('hidden');
+                    } else {
+                        noResults.classList.remove('hidden');
+                    }
+                }
+            }
+
+            // 初始化搜索和筛选功能
+            if (searchInput && categoryFilter) {
+                const debouncedFilter = debounce(filterSkills, 300);
+                searchInput.addEventListener('input', debouncedFilter);
+                categoryFilter.addEventListener('change', filterSkills);
+            }
+
+            // 生成模拟技能数据
+            function generateMockSkills(isMySkills = false) {
+                const industries = ['互联网', '金融', '教育', '医疗', '制造业', '零售', '物流'];
+                const levels = ['初级', '中级', '高级', '专家'];
+                
+                // 为技能库和我的技能准备不同的技能名称池
+                const skillLibraryNames = [
+                    'JavaScript编程', 'Python数据分析', 'UI设计', '产品经理', 'DevOps', '网络安全',
+                    '移动开发', '人工智能', '云计算', '大数据', '区块链', '前端开发', '后端开发',
+                    '测试工程师', '运维工程师', '数据库管理', 'API设计', '微服务架构', '敏捷开发'
+                ];
+                
+                const mySkillsNames = [
+                    'React开发', 'Node.js后端', 'SQL数据库', 'RESTful API', 'Git版本控制', 'Linux系统',
+                    'HTML/CSS', 'TypeScript', 'Docker容器', 'Kubernetes', 'CI/CD', 'Jest测试',
+                    '性能优化', '响应式设计', '用户体验', 'GraphQL', 'Redis缓存', 'MongoDB'
+                ];
+
+                // 根据模块选择不同的技能名称池
+                const skillNames = isMySkills ? mySkillsNames : skillLibraryNames;
+
+                return Array.from({length: 8}, (_, i) => ({
+                    id: `skill-${Date.now()}-${i}`,
+                    name: skillNames[Math.floor(Math.random() * skillNames.length)],
+                    description: `这是一项${levels[Math.floor(Math.random() * levels.length)]}水平的${skillNames[Math.floor(Math.random() * skillNames.length)]}技能，适用于${industries[Math.floor(Math.random() * industries.length)]}行业。`,
+                    industry: industries[Math.floor(Math.random() * industries.length)],
+                    level: levels[Math.floor(Math.random() * levels.length)],
+                    createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+                    isActive: isMySkills ? Math.random() > 0.2 : Math.random() > 0.3, // 我的技能默认启用率更高
+                    isMine: isMySkills // 标记是否为我的技能
+                }));
+            }
+
+            // 渲染技能卡片
+            function renderSkills(skills) {
+                const skillsContainer = document.getElementById('skills-container');
+                if (!skillsContainer) return;
+
+                skillsContainer.innerHTML = '';
+
+                skills.forEach(skill => {
+                    const skillCard = document.createElement('div');
+                    skillCard.className = 'bg-white dark:bg-dark-card rounded-lg shadow-md p-5 mb-4 relative transition-all duration-300 hover:shadow-lg';
+                    skillCard.setAttribute('data-skill-card', '');
+                    skillCard.setAttribute('data-skill-category', skill.industry);
+
+                    skillCard.innerHTML = `
+                        <div class="absolute top-4 left-4">
+                            <input type="checkbox" class="skill-checkbox rounded text-primary focus:ring-primary" data-skill-id="${skill.id}">
+                        </div>
+                        <div class="flex justify-between items-start mb-4 pl-8">
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white" data-skill-name="${skill.name}">${skill.name}</h3>
+                            <span class="text-xs inline-flex items-center px-2 py-1 rounded-full bg-${skill.isActive ? 'green' : 'red'}-100 text-${skill.isActive ? 'green' : 'red'}-800 dark:bg-${skill.isActive ? 'green' : 'red'}-900 dark:text-${skill.isActive ? 'green' : 'red'}-200">
+                                <i class="fa fa-${skill.isActive ? 'check-circle' : 'times-circle'} mr-1"></i> ${skill.isActive ? '已启用' : '已禁用'}
+                            </span>
+                        </div>
+                        <p class="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2 pl-8">${skill.description}</p>
+                        <div class="flex flex-wrap gap-2 mb-4 pl-8">
+                            <span class="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 px-2 py-1 rounded-full">${skill.industry}</span>
+                            <span class="text-xs bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 px-2 py-1 rounded-full">${skill.level}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm text-gray-500 dark:text-gray-400 pl-8 pt-3 border-t border-gray-200 dark:border-gray-700">
+                            <span class="flex items-center"><i class="fa fa-clock-o mr-1"></i> 修改时间: ${skill.createdAt}</span>
+                            <div class="flex space-x-2">
+                                <button class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors duration-200" data-action="view"><i class="fa fa-eye mr-1"></i> 查看</button>
+                                <button class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors duration-200" data-action="edit"><i class="fa fa-pencil mr-1"></i> 编辑</button>
+                                <button class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors duration-200" data-action="copy"><i class="fa fa-copy mr-1"></i> 复制</button>
+                            </div>
+                        </div>
+                    `;
+                    skillsContainer.appendChild(skillCard);
+
+                    // 添加淡入动画
+                    setTimeout(() => {
+                        skillCard.style.opacity = '1';
+                        skillCard.style.transform = 'translateY(0)';
+                    }, 10);
+                });
+            }
+
+            // 页面加载完成后初始化
+            // 判断是否为技能管理模块
+            const isSkillManagement = document.body.classList.contains('skill-management');
+            if (isSkillManagement) {
+                // 标准化URL路径，移除可能的空格
+                function normalizePath(path) {
+                    return path.replace(/\s+/g, '');
+                }
+
+                // 初始化函数，根据isMySkills参数渲染不同的技能数据
+                function initSkillModule(isMySkills) {
+                    console.log('Initializing skill module. isMySkills:', isMySkills);
+                     
+                    // 更新导航高亮
+                    const navSkillLibrary = document.getElementById('nav-skill-library');
+                    const navMySkills = document.getElementById('nav-my-skills');
+                    
+                    if (isMySkills) {
+                        navSkillLibrary.classList.remove('text-primary', 'border-primary');
+                        navSkillLibrary.classList.add('text-gray-500', 'dark:text-gray-400', 'border-transparent');
+                        navMySkills.classList.remove('text-gray-500', 'dark:text-gray-400', 'border-transparent');
+                        navMySkills.classList.add('text-primary', 'border-primary');
+                    } else {
+                        navSkillLibrary.classList.remove('text-gray-500', 'dark:text-gray-400', 'border-transparent');
+                        navSkillLibrary.classList.add('text-primary', 'border-primary');
+                        navMySkills.classList.remove('text-primary', 'border-primary');
+                        navMySkills.classList.add('text-gray-500', 'dark:text-gray-400', 'border-transparent');
+                    }
+
+                    // 生成并渲染模拟数据
+                    const mockSkills = generateMockSkills(isMySkills);
+                    console.log('Generated skills:', mockSkills.length);
+                    renderSkills(mockSkills);
+                    console.log('Skills rendered');
+                }
+
+                // 初始加载时标准化URL并判断
+                const normalizedPath = normalizePath(window.location.pathname);
+                const isMySkills = normalizedPath.includes('我的技能');
+                console.log('Original path:', window.location.pathname);
+                console.log('Normalized path:', normalizedPath);
+                console.log('isMySkills:', isMySkills);
+                initSkillModule(isMySkills);
+
+                // 添加导航点击事件
+                document.getElementById('nav-skill-library').addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const url = '/module/技能管理/技能库';
+                    console.log('Navigating to:', url);
+                    // 更新URL而不刷新页面
+                    history.pushState(null, null, url);
+                    // 重新初始化模块
+                    initSkillModule(false);
+                });
+                
+                document.getElementById('nav-my-skills').addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const url = '/module/技能管理/我的技能';
+                    console.log('Navigating to:', url);
+                    // 更新URL而不刷新页面
+                    history.pushState(null, null, url);
+                    // 重新初始化模块
+                    initSkillModule(true);
+                });
+
+                // 监听浏览器历史变化
+                window.addEventListener('popstate', function() {
+                    const normalizedPath = normalizePath(window.location.pathname);
+                    const isMySkills = normalizedPath.includes('我的技能');
+                    console.log('Popstate event. Normalized path:', normalizedPath, 'isMySkills:', isMySkills);
+                    initSkillModule(isMySkills);
+                });
+            }
+        });
+    </script>
+</head>
+<body class="bg-dark min-h-screen font-sans {{ 'skill-management' if level1_name == '技能管理' else '' }} {{ 'ngd-module' if is_ngd_module else '' }}">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <header class="mb-8">
+            <a href="/" class="inline-block text-primary mb-4"><i class="fa fa-arrow-left mr-2"></i>返回首页</a>
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">{{ level1_name }}</h1>
+            <p class="text-gray-500 dark:text-gray-400">管理和维护技能数据</p>
+
+            <!-- 子模块导航 -->
+            {% if is_ngd_module %}
+            <div class="mt-6 bg-gray-900 p-6 rounded-xl shadow-lg border border-gray-800">
+                <div class="mb-4 text-lg font-semibold text-gray-200">共 {{ level2_modules|length }} 个子模块 - 分类展示</div>
+                
+                <!-- 核心功能模块 -->
+                <div class="mb-8">
+                    <h3 class="text-md font-medium text-blue-400 mb-3 border-b border-blue-900 pb-2">核心功能模块</h3>
+                    <nav class="flex flex-wrap gap-3">
+                        {% set core_modules = ['会话流程', '实体', '意图', 'FAQ 问答', '机器人闲聊', '接口指令'] %}
+                        {% for module in core_modules if module in level2_modules %}
+                        <a href="/module/{{ level1_name | replace(' ', '-') }}/{{ module | replace(' ', '-') }}" class="px-4 py-2 bg-gray-800 hover:bg-blue-900 text-gray-200 rounded-md transition-all duration-200 whitespace-nowrap flex items-center gap-2">
+                            <i class="fa fa-cog text-blue-400"></i> {{ module }}
+                        </a>
+                        {% endfor %}
+                    </nav>
+                </div>
+                
+                <!-- 系统配置模块 -->
+                <div class="mb-8">
+                    <h3 class="text-md font-medium text-green-400 mb-3 border-b border-green-900 pb-2">系统配置模块</h3>
+                    <nav class="flex flex-wrap gap-3">
+                        {% set config_modules = ['渠道管理', '专业词库', '全局变量', '敏感词库', '第三方引擎'] %}
+                        {% for module in config_modules if module in level2_modules %}
+                        <button onclick="showModal('{{ module }}')" class="px-4 py-2 bg-gray-800 hover:bg-green-900 text-gray-200 rounded-md transition-all duration-200 whitespace-nowrap flex items-center gap-2 cursor-pointer">
+                            <i class="fa fa-sliders text-green-400"></i> {{ module }}
+                        </button>
+                        {% endfor %}
+
+                        <script>
+                        // 浮窗内容配置
+                        const modalContents = {
+                            '渠道管理': `
+                                <div class="modal-content p-6">
+                                    <h3 class="text-xl font-bold mb-4">渠道管理</h3>
+                                    <div class="mb-6">
+                                        <h4 class="text-lg font-medium mb-2">渠道列表</h4>
+                                        <button class="add-channel-btn px-3 py-1 bg-green-500 text-white rounded mr-2 mb-4">新增渠道</button>
+                                        <div class="channel-list border rounded p-3 max-h-60 overflow-y-auto">
+                                            <div class="channel-item flex justify-between items-center p-2 border-b">
+                                                <span>渠道1</span>
+                                                <div>
+                                                    <button class="edit-btn px-2 py-1 bg-blue-500 text-white rounded mr-1">编辑</button>
+                                                    <button class="delete-btn px-2 py-1 bg-red-500 text-white rounded mr-1">删除</button>
+                                                    <button class="status-btn px-2 py-1 bg-yellow-500 text-white rounded">上线</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-lg font-medium mb-2">渠道分级别分纬度</h4>
+                                        <select class="w-full p-2 border rounded mb-2">
+                                            <option>选择渠道</option>
+                                        </select>
+                                        <div class="flex gap-2 mb-2">
+                                            <select class="w-full p-2 border rounded">
+                                                <option>选择级别</option>
+                                            </select>
+                                            <select class="w-full p-2 border rounded">
+                                                <option>选择纬度</option>
+                                            </select>
+                                        </div>
+                                        <button class="assign-btn w-full px-3 py-2 bg-primary text-white rounded">分配</button>
+                                    </div>
+                                </div>
+                            `,
+                            '专业词库': `
+                                <div class="modal-content p-6">
+                                    <h3 class="text-xl font-bold mb-4">专业词库</h3>
+                                    <button class="add-word-btn px-3 py-1 bg-green-500 text-white rounded mr-2 mb-4">新增词库</button>
+                                    <div class="word-list border rounded p-3 max-h-80 overflow-y-auto">
+                                        <div class="word-item flex justify-between items-center p-2 border-b">
+                                            <span>词库1</span>
+                                            <div>
+                                                <button class="edit-btn px-2 py-1 bg-blue-500 text-white rounded mr-1">编辑</button>
+                                                <button class="delete-btn px-2 py-1 bg-red-500 text-white rounded">删除</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `,
+                            '全局变量': `
+                                <div class="modal-content p-6">
+                                    <h3 class="text-xl font-bold mb-4">全局变量</h3>
+                                    <button class="add-var-btn px-3 py-1 bg-green-500 text-white rounded mr-2 mb-4">新增变量</button>
+                                    <div class="var-list border rounded p-3 max-h-80 overflow-y-auto">
+                                        <div class="var-item flex justify-between items-center p-2 border-b">
+                                            <div>
+                                                <div class="font-medium">变量1</div>
+                                                <div class="text-sm text-gray-500">值: value1</div>
+                                            </div>
+                                            <div>
+                                                <button class="edit-btn px-2 py-1 bg-blue-500 text-white rounded mr-1">编辑</button>
+                                                <button class="delete-btn px-2 py-1 bg-red-500 text-white rounded">删除</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `,
+                            '敏感词库': `
+                                <div class="modal-content p-6">
+                                    <h3 class="text-xl font-bold mb-4">敏感词库</h3>
+                                    <button class="add-sensitive-btn px-3 py-1 bg-green-500 text-white rounded mr-2 mb-4">新增敏感词</button>
+                                    <div class="sensitive-list border rounded p-3 max-h-80 overflow-y-auto">
+                                        <div class="sensitive-item flex justify-between items-center p-2 border-b">
+                                            <span>敏感词1</span>
+                                            <div>
+                                                <button class="edit-btn px-2 py-1 bg-blue-500 text-white rounded mr-1">编辑</button>
+                                                <button class="delete-btn px-2 py-1 bg-red-500 text-white rounded">删除</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `,
+                            '第三方引擎': `
+                                <div class="modal-content p-6">
+                                    <h3 class="text-xl font-bold mb-4">第三方引擎</h3>
+                                    <button class="add-engine-btn px-3 py-1 bg-green-500 text-white rounded mr-2 mb-4">添加引擎</button>
+                                    <div class="engine-list border rounded p-3 max-h-60 overflow-y-auto">
+                                        <div class="engine-item flex justify-between items-center p-2 border-b">
+                                            <div>
+                                                <div class="font-medium">引擎1</div>
+                                                <div class="text-sm text-gray-500">类型: 文本分析</div>
+                                            </div>
+                                            <button class="delete-btn px-2 py-1 bg-red-500 text-white rounded">删除</button>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 p-4 bg-gray-100 rounded">
+                                        <h4 class="font-medium mb-2">新增第三方引擎</h4>
+                                        <div class="mb-2">
+                                            <label class="block mb-1">引擎名称</label>
+                                            <input type="text" class="w-full p-2 border rounded">
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="block mb-1">引擎类型</label>
+                                            <select class="w-full p-2 border rounded">
+                                                <option>文本分析</option>
+                                                <option>图像处理</option>
+                                                <option>语音识别</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="block mb-1">API密钥</label>
+                                            <input type="password" class="w-full p-2 border rounded">
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="block mb-1">API URL</label>
+                                            <input type="text" class="w-full p-2 border rounded">
+                                        </div>
+                                        <button class="save-engine-btn w-full px-3 py-2 bg-primary text-white rounded">保存</button>
+                                    </div>
+                                </div>
+                            `,
+                            '问答模型管理': `
+                                <div class="modal-content p-6">
+                                    <h3 class="text-xl font-bold mb-4">问答模型管理</h3>
+                                    <div class="mb-6">
+                                        <h4 class="text-lg font-medium mb-2">模型列表</h4>
+                                        <button class="add-model-btn px-3 py-1 bg-green-500 text-white rounded mr-2 mb-4">新增问答模型训练</button>
+                                        <div class="model-list border rounded p-3 max-h-60 overflow-y-auto">
+                                            <div class="model-item flex justify-between items-center p-2 border-b">
+                                                <div>
+                                                    <div class="font-medium">客服问答模型V1</div>
+                                                    <div class="text-sm text-gray-500">状态: 已训练</div>
+                                                </div>
+                                                <div>
+                                                    <button class="test-btn px-2 py-1 bg-blue-500 text-white rounded mr-1">测试</button>
+                                                    <button class="manage-btn px-2 py-1 bg-purple-500 text-white rounded">管理</button>
+                                                </div>
+                                            </div>
+                                            <div class="model-item flex justify-between items-center p-2 border-b">
+                                                <div>
+                                                    <div class="font-medium">产品咨询模型V2</div>
+                                                    <div class="text-sm text-gray-500">状态: 训练中</div>
+                                                </div>
+                                                <div>
+                                                    <button class="test-btn px-2 py-1 bg-blue-500 text-white rounded mr-1" disabled>测试</button>
+                                                    <button class="manage-btn px-2 py-1 bg-purple-500 text-white rounded">管理</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `,
+                            '测试集管理': `
+                                <div class="modal-content p-6">
+                                    <h3 class="text-xl font-bold mb-4">测试集管理</h3>
+                                    <button class="add-testset-btn px-3 py-1 bg-green-500 text-white rounded mr-2 mb-4">新增测试集</button>
+                                    <div class="testset-list border rounded p-3 max-h-80 overflow-y-auto">
+                                        <div class="testset-item flex justify-between items-center p-2 border-b">
+                                            <div>
+                                                <div class="font-medium">基础问答测试集</div>
+                                                <div class="text-sm text-gray-500">样本数: 100</div>
+                                            </div>
+                                            <div>
+                                                <button class="edit-btn px-2 py-1 bg-blue-500 text-white rounded mr-1">编辑</button>
+                                                <button class="delete-btn px-2 py-1 bg-red-500 text-white rounded mr-1">删除</button>
+                                                <button class="use-btn px-2 py-1 bg-green-500 text-white rounded">使用</button>
+                                            </div>
+                                        </div>
+                                        <div class="testset-item flex justify-between items-center p-2 border-b">
+                                            <div>
+                                                <div class="font-medium">意图识别测试集</div>
+                                                <div class="text-sm text-gray-500">样本数: 200</div>
+                                            </div>
+                                            <div>
+                                                <button class="edit-btn px-2 py-1 bg-blue-500 text-white rounded mr-1">编辑</button>
+                                                <button class="delete-btn px-2 py-1 bg-red-500 text-white rounded mr-1">删除</button>
+                                                <button class="use-btn px-2 py-1 bg-green-500 text-white rounded">使用</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `,
+                            '数据审核': `
+                                <div class="modal-content p-6">
+                                    <h3 class="text-xl font-bold mb-4">数据审核</h3>
+                                    <div class="mb-4">
+                                        <select class="w-full p-2 border rounded mb-4">
+                                            <option>问答审核</option>
+                                            <option>意图审核</option>
+                                            <option>实体审核</option>
+                                            <option>闲聊审核</option>
+                                            <option>文档审核</option>
+                                            <option>不响应问审核</option>
+                                            <option>标注审核</option>
+                                        </select>
+                                    </div>
+                                    <div class="audit-list border rounded p-3 max-h-60 overflow-y-auto">
+                                        <div class="audit-item flex justify-between items-center p-2 border-b">
+                                            <div>
+                                                <div class="font-medium">用户问答示例1</div>
+                                                <div class="text-sm text-gray-500">提交人: 张三 | 时间: 2023-10-15</div>
+                                            </div>
+                                            <div>
+                                                <button class="approve-btn px-2 py-1 bg-green-500 text-white rounded mr-1">通过</button>
+                                                <button class="reject-btn px-2 py-1 bg-red-500 text-white rounded">拒绝</button>
+                                            </div>
+                                        </div>
+                                        <div class="audit-item flex justify-between items-center p-2 border-b">
+                                            <div>
+                                                <div class="font-medium">意图识别示例2</div>
+                                                <div class="text-sm text-gray-500">提交人: 李四 | 时间: 2023-10-14</div>
+                                            </div>
+                                            <div>
+                                                <button class="approve-btn px-2 py-1 bg-green-500 text-white rounded mr-1">通过</button>
+                                                <button class="reject-btn px-2 py-1 bg-red-500 text-white rounded">拒绝</button>
+                                            </div>
+                                        </div>
+                                        <div class="audit-item flex justify-between items-center p-2 border-b">
+                                            <div>
+                                                <div class="font-medium">实体定义示例3</div>
+                                                <div class="text-sm text-gray-500">提交人: 王五 | 时间: 2023-10-13</div>
+                                            </div>
+                                            <div>
+                                                <button class="approve-btn px-2 py-1 bg-green-500 text-white rounded mr-1">通过</button>
+                                                <button class="reject-btn px-2 py-1 bg-red-500 text-white rounded">拒绝</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `,
+                            '流程片段审核': `
+                                <div class="modal-content p-6">
+                                    <h3 class="text-xl font-bold mb-4">流程片段审核</h3>
+                                    <div class="audit-list border rounded p-3 max-h-80 overflow-y-auto">
+                                        <div class="audit-item flex justify-between items-center p-2 border-b">
+                                            <div>
+                                                <div class="font-medium">用户注册流程更新</div>
+                                                <div class="text-sm text-gray-500">修改人: 张三 | 时间: 2023-10-15</div>
+                                            </div>
+                                            <div>
+                                                <button class="view-btn px-2 py-1 bg-blue-500 text-white rounded mr-1">查看</button>
+                                                <button class="approve-btn px-2 py-1 bg-green-500 text-white rounded mr-1">通过</button>
+                                                <button class="reject-btn px-2 py-1 bg-red-500 text-white rounded">拒绝</button>
+                                            </div>
+                                        </div>
+                                        <div class="audit-item flex justify-between items-center p-2 border-b">
+                                            <div>
+                                                <div class="font-medium">订单查询流程优化</div>
+                                                <div class="text-sm text-gray-500">修改人: 李四 | 时间: 2023-10-14</div>
+                                            </div>
+                                            <div>
+                                                <button class="view-btn px-2 py-1 bg-blue-500 text-white rounded mr-1">查看</button>
+                                                <button class="approve-btn px-2 py-1 bg-green-500 text-white rounded mr-1">通过</button>
+                                                <button class="reject-btn px-2 py-1 bg-red-500 text-white rounded">拒绝</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `,
+                            'Bot 审核': `
+                                <div class="modal-content p-6">
+                                    <h3 class="text-xl font-bold mb-4">Bot 审核</h3>
+                                    <div class="audit-list border rounded p-3 max-h-80 overflow-y-auto">
+                                        <div class="audit-item flex justify-between items-center p-2 border-b">
+                                            <div>
+                                                <div class="font-medium">客服Bot V2.0</div>
+                                                <div class="text-sm text-gray-500">提交人: 张三 | 时间: 2023-10-15</div>
+                                                <div class="text-sm text-yellow-500 mt-1">待审核</div>
+                                            </div>
+                                            <div>
+                                                <button class="view-btn px-2 py-1 bg-blue-500 text-white rounded mr-1">查看</button>
+                                                <button class="approve-btn px-2 py-1 bg-green-500 text-white rounded mr-1">通过</button>
+                                                <button class="reject-btn px-2 py-1 bg-red-500 text-white rounded">拒绝</button>
+                                            </div>
+                                        </div>
+                                        <div class="audit-item flex justify-between items-center p-2 border-b">
+                                            <div>
+                                                <div class="font-medium">营销Bot V1.5</div>
+                                                <div class="text-sm text-gray-500">提交人: 李四 | 时间: 2023-10-14</div>
+                                                <div class="text-sm text-green-500 mt-1">已通过</div>
+                                            </div>
+                                            <div>
+                                                <button class="view-btn px-2 py-1 bg-blue-500 text-white rounded mr-1">查看</button>
+                                                <button class="certify-btn px-2 py-1 bg-purple-500 text-white rounded">认证</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `,
+                            '审核开关': `
+                                <div class="modal-content p-6">
+                                    <h3 class="text-xl font-bold mb-4">审核开关</h3>
+                                    <div class="settings-list space-y-4">
+                                        <div class="setting-item p-3 border rounded flex justify-between items-center">
+                                            <div>
+                                                <div class="font-medium">问答审核开关</div>
+                                                <div class="text-sm text-gray-500">开启后，新增问答需要审核</div>
+                                            </div>
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" value="" class="sr-only peer" checked>
+                                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                            </label>
+                                        </div>
+                                        <div class="setting-item p-3 border rounded flex justify-between items-center">
+                                            <div>
+                                                <div class="font-medium">意图审核开关</div>
+                                                <div class="text-sm text-gray-500">开启后，新增意图需要审核</div>
+                                            </div>
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" value="" class="sr-only peer" checked>
+                                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                            </label>
+                                        </div>
+                                        <div class="setting-item p-3 border rounded flex justify-between items-center">
+                                            <div>
+                                                <div class="font-medium">流程片段审核开关</div>
+                                                <div class="text-sm text-gray-500">开启后，修改流程片段需要审核</div>
+                                            </div>
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" value="" class="sr-only peer">
+                                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                            </label>
+                                        </div>
+                                        <div class="setting-item p-3 border rounded flex justify-between items-center">
+                                            <div>
+                                                <div class="font-medium">Bot审核开关</div>
+                                                <div class="text-sm text-gray-500">开启后，Bot发布需要审核</div>
+                                            </div>
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" value="" class="sr-only peer" checked>
+                                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            `,
+                            '知识发布': `
+                                <div class="modal-content p-6">
+                                    <h3 class="text-xl font-bold mb-4">知识发布</h3>
+                                    <div class="mb-6">
+                                        <h4 class="text-lg font-medium mb-2">发布设置</h4>
+                                        <div class="mb-4">
+                                            <label class="block mb-2">发布类型</label>
+                                            <div class="space-y-2">
+                                                <label class="flex items-center">
+                                                    <input type="radio" name="publishType" value="full" class="mr-2" checked>
+                                                    <span>分库发布</span>
+                                                </label>
+                                                <label class="flex items-center">
+                                                    <input type="radio" name="publishType" value="incremental" class="mr-2">
+                                                    <span>增量发布</span>
+                                                </label>
+                                                <label class="flex items-center">
+                                                    <input type="radio" name="publishType" value="cancel" class="mr-2">
+                                                    <span>取消发布</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="mb-4">
+                                            <label class="block mb-2">选择知识库</label>
+                                            <select class="w-full p-2 border rounded">
+                                                <option>产品知识库</option>
+                                                <option>常见问题库</option>
+                                                <option>技术文档库</option>
+                                            </select>
+                                        </div>
+                                        <button class="publish-btn px-4 py-2 bg-green-500 text-white rounded">发布</button>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-lg font-medium mb-2">发布记录</h4>
+                                        <div class="record-list border rounded p-3 max-h-60 overflow-y-auto">
+                                            <div class="record-item flex justify-between items-center p-2 border-b">
+                                                <div>
+                                                    <div class="font-medium">产品知识库 - 分库发布</div>
+                                                    <div class="text-sm text-gray-500">发布人: 张三 | 时间: 2023-10-15</div>
+                                                    <div class="text-sm text-green-500 mt-1">发布成功</div>
+                                                </div>
+                                                <button class="view-btn px-2 py-1 bg-blue-500 text-white rounded">查看</button>
+                                            </div>
+                                            <div class="record-item flex justify-between items-center p-2 border-b">
+                                                <div>
+                                                    <div class="font-medium">常见问题库 - 增量发布</div>
+                                                    <div class="text-sm text-gray-500">发布人: 李四 | 时间: 2023-10-14</div>
+                                                    <div class="text-sm text-green-500 mt-1">发布成功</div>
+                                                </div>
+                                                <button class="view-btn px-2 py-1 bg-blue-500 text-white rounded">查看</button>
+                                            </div>
+                                            <div class="record-item flex justify-between items-center p-2 border-b">
+                                                <div>
+                                                    <div class="font-medium">技术文档库 - 分库发布</div>
+                                                    <div class="text-sm text-gray-500">发布人: 王五 | 时间: 2023-10-13</div>
+                                                    <div class="text-sm text-red-500 mt-1">发布失败</div>
+                                                </div>
+                                                <button class="view-btn px-2 py-1 bg-blue-500 text-white rounded">查看</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `,
+                            '会话标注': `
+                                <div class="modal-content p-6">
+                                    <h3 class="text-xl font-bold mb-4">会话标注</h3>
+                                    <div class="flex justify-between items-center mb-4">
+                                        <button class="create-task-btn px-4 py-2 bg-green-500 text-white rounded">创建标注任务</button>
+                                        <button class="config-rule-btn px-4 py-2 bg-blue-500 text-white rounded">配置任务规则</button>
+                                    </div>
+                                    <div class="task-list border rounded p-3 max-h-80 overflow-y-auto">
+                                        <div class="task-item flex justify-between items-center p-2 border-b">
+                                            <div>
+                                                <div class="font-medium">客服会话标注任务1</div>
+                                                <div class="text-sm text-gray-500">创建人: 张三 | 时间: 2023-10-15</div>
+                                                <div class="text-sm text-yellow-500 mt-1">进行中 (3/10)</div>
+                                            </div>
+                                            <div>
+                                                <button class="view-btn px-2 py-1 bg-blue-500 text-white rounded mr-1">查看</button>
+                                                <button class="annotate-btn px-2 py-1 bg-purple-500 text-white rounded">开始标注</button>
+                                            </div>
+                                        </div>
+                                        <div class="task-item flex justify-between items-center p-2 border-b">
+                                            <div>
+                                                <div class="font-medium">营销会话标注任务2</div>
+                                                <div class="text-sm text-gray-500">创建人: 李四 | 时间: 2023-10-14</div>
+                                                <div class="text-sm text-green-500 mt-1">已完成 (10/10)</div>
+                                            </div>
+                                            <div>
+                                                <button class="view-btn px-2 py-1 bg-blue-500 text-white rounded mr-1">查看</button>
+                                                <button class="export-btn px-2 py-1 bg-gray-500 text-white rounded">导出</button>
+                                            </div>
+                                        </div>
+                                        <div class="task-item flex justify-between items-center p-2 border-b">
+                                            <div>
+                                                <div class="font-medium">售后会话标注任务3</div>
+                                                <div class="text-sm text-gray-500">创建人: 王五 | 时间: 2023-10-13</div>
+                                                <div class="text-sm text-red-500 mt-1">未开始 (0/5)</div>
+                                            </div>
+                                            <div>
+                                                <button class="view-btn px-2 py-1 bg-blue-500 text-white rounded mr-1">查看</button>
+                                                <button class="start-btn px-2 py-1 bg-green-500 text-white rounded">启动</button>
+                                            </div>
+                                        </div>
+                                        <div class="task-item flex justify-between items-center p-2 border-b">
+                                            <div>
+                                                <div class="font-medium">投诉会话标注任务4</div>
+                                                <div class="text-sm text-gray-500">创建人: 赵六 | 时间: 2023-10-12</div>
+                                                <div class="text-sm text-yellow-500 mt-1">进行中 (7/15)</div>
+                                            </div>
+                                            <div>
+                                                <button class="view-btn px-2 py-1 bg-blue-500 text-white rounded mr-1">查看</button>
+                                                <button class="annotate-btn px-2 py-1 bg-purple-500 text-white rounded">继续标注</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `,
+                            '扩展问推荐': `
+                                <div class="modal-content p-6">
+                                    <h3 class="text-xl font-bold mb-4">扩展问推荐</h3>
+                                    <div class="tabs mb-4">
+                                        <button class="tab-btn px-4 py-2 bg-blue-500 text-white rounded mr-2">意图推荐</button>
+                                        <button class="tab-btn px-4 py-2 bg-gray-500 text-white rounded">问答推荐</button>
+                                    </div>
+                                    <div class="recommendation-list border rounded p-3 max-h-80 overflow-y-auto">
+                                        <div class="recommendation-item p-3 border-b">
+                                            <div class="font-medium">主问题: 如何修改密码?</div>
+                                            <div class="mt-2 space-y-2">
+                                                <div class="flex items-center">
+                                                    <input type="checkbox" class="mr-2" checked>
+                                                    <span>我想更改我的账户密码</span>
+                                                    <span class="ml-2 text-sm text-green-500">高相关</span>
+                                                </div>
+                                                <div class="flex items-center">
+                                                    <input type="checkbox" class="mr-2" checked>
+                                                    <span>密码修改步骤</span>
+                                                    <span class="ml-2 text-sm text-green-500">高相关</span>
+                                                </div>
+                                                <div class="flex items-center">
+                                                    <input type="checkbox" class="mr-2">
+                                                    <span>忘记密码怎么办</span>
+                                                    <span class="ml-2 text-sm text-yellow-500">中相关</span>
+                                                </div>
+                                                <div class="flex items-center">
+                                                    <input type="checkbox" class="mr-2">
+                                                    <span>密码找回流程</span>
+                                                    <span class="ml-2 text-sm text-yellow-500">中相关</span>
+                                                </div>
+                                            </div>
+                                            <button class="save-btn mt-3 px-3 py-1 bg-green-500 text-white rounded text-sm">保存所选</button>
+                                        </div>
+                                        <div class="recommendation-item p-3 border-b">
+                                            <div class="font-medium">主问题: 如何申请退款?</div>
+                                            <div class="mt-2 space-y-2">
+                                                <div class="flex items-center">
+                                                    <input type="checkbox" class="mr-2" checked>
+                                                    <span>退款申请流程</span>
+                                                    <span class="ml-2 text-sm text-green-500">高相关</span>
+                                                </div>
+                                                <div class="flex items-center">
+                                                    <input type="checkbox" class="mr-2" checked>
+                                                    <span>我要退款怎么操作</span>
+                                                    <span class="ml-2 text-sm text-green-500">高相关</span>
+                                                </div>
+                                                <div class="flex items-center">
+                                                    <input type="checkbox" class="mr-2">
+                                                    <span>退款需要多长时间</span>
+                                                    <span class="ml-2 text-sm text-yellow-500">中相关</span>
+                                                </div>
+                                            </div>
+                                            <button class="save-btn mt-3 px-3 py-1 bg-green-500 text-white rounded text-sm">保存所选</button>
+                                        </div>
+                                        <div class="recommendation-item p-3 border-b">
+                                            <div class="font-medium">主问题: 如何查询订单?</div>
+                                            <div class="mt-2 space-y-2">
+                                                <div class="flex items-center">
+                                                    <input type="checkbox" class="mr-2" checked>
+                                                    <span>订单查询方式</span>
+                                                    <span class="ml-2 text-sm text-green-500">高相关</span>
+                                                </div>
+                                                <div class="flex items-center">
+                                                    <input type="checkbox" class="mr-2" checked>
+                                                    <span>我的订单在哪里看</span>
+                                                    <span class="ml-2 text-sm text-green-500">高相关</span>
+                                                </div>
+                                                <div class="flex items-center">
+                                                    <input type="checkbox" class="mr-2">
+                                                    <span>订单物流信息查询</span>
+                                                    <span class="ml-2 text-sm text-yellow-500">中相关</span>
+                                                </div>
+                                                <div class="flex items-center">
+                                                    <input type="checkbox" class="mr-2">
+                                                    <span>如何取消订单</span>
+                                                    <span class="ml-2 text-sm text-yellow-500">中相关</span>
+                                                </div>
+                                                <div class="flex items-center">
+                                                    <input type="checkbox" class="mr-2">
+                                                    <span>订单状态说明</span>
+                                                    <span class="ml-2 text-sm text-gray-500">低相关</span>
+                                                </div>
+                                            </div>
+                                            <button class="save-btn mt-3 px-3 py-1 bg-green-500 text-white rounded text-sm">保存所选</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `,
+                            'nlu 分析': `
+                                <div class="modal-content p-6">
+                                    <h3 class="text-xl font-bold mb-4">nlu 分析</h3>
+                                    <div class="mb-4">
+                                        <input type="text" placeholder="输入查询文本" class="w-full p-2 border rounded mb-2">
+                                        <button class="test-btn px-4 py-2 bg-blue-500 text-white rounded">测试匹配</button>
+                                    </div>
+                                    <div class="result-tabs mb-4">
+                                        <button class="tab-btn px-4 py-2 bg-blue-500 text-white rounded mr-2">问答匹配</button>
+                                        <button class="tab-btn px-4 py-2 bg-gray-500 text-white rounded mr-2">意图分析</button>
+                                        <button class="tab-btn px-4 py-2 bg-gray-500 text-white rounded mr-2">情绪态度</button>
+                                        <button class="tab-btn px-4 py-2 bg-gray-500 text-white rounded">闲聊检测</button>
+                                    </div>
+                                    <div class="result-list border rounded p-3 max-h-80 overflow-y-auto">
+                                        <div class="result-item p-3 border-b bg-blue-50">
+                                            <div class="font-medium">查询文本: 如何修改密码?</div>
+                                            <div class="mt-2 space-y-2">
+                                                <div>
+                                                    <span class="font-medium">最佳匹配问答:</span>
+                                                    <div class="pl-4 mt-1">
+                                                        <div class="text-blue-600">问题: 如何修改账户密码?</div>
+                                                        <div class="text-sm text-gray-600 mt-1">答案: 您可以在个人中心-账户安全-密码修改中进行操作。</div>
+                                                        <div class="text-sm text-green-600 mt-1">相似度: 95%</div>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <span class="font-medium">匹配意图:</span>
+                                                    <div class="pl-4 mt-1 text-green-600">账户设置 (置信度: 98%)</div>
+                                                </div>
+                                                <div>
+                                                    <span class="font-medium">情绪态度:</span>
+                                                    <div class="pl-4 mt-1 text-blue-600">中性 (置信度: 92%)</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="result-item p-3 border-b">
+                                            <div class="font-medium">查询文本: 你们的产品太差了，我要投诉!</div>
+                                            <div class="mt-2 space-y-2">
+                                                <div>
+                                                    <span class="font-medium">最佳匹配问答:</span>
+                                                    <div class="pl-4 mt-1">
+                                                        <div class="text-blue-600">问题: 如何提交投诉?</div>
+                                                        <div class="text-sm text-gray-600 mt-1">答案: 您可以拨打客服热线400-123-4567或在APP内提交投诉表单。</div>
+                                                        <div class="text-sm text-green-600 mt-1">相似度: 87%</div>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <span class="font-medium">匹配意图:</span>
+                                                    <div class="pl-4 mt-1 text-green-600">投诉 (置信度: 96%)</div>
+                                                </div>
+                                                <div>
+                                                    <span class="font-medium">情绪态度:</span>
+                                                    <div class="pl-4 mt-1 text-red-600">愤怒 (置信度: 94%)</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="result-item p-3 border-b">
+                                            <div class="font-medium">查询文本: 今天天气怎么样?</div>
+                                            <div class="mt-2 space-y-2">
+                                                <div>
+                                                    <span class="font-medium">最佳匹配问答:</span>
+                                                    <div class="pl-4 mt-1 text-gray-500">无相关问答</div>
+                                                </div>
+                                                <div>
+                                                    <span class="font-medium">匹配意图:</span>
+                                                    <div class="pl-4 mt-1 text-gray-500">无明确意图</div>
+                                                </div>
+                                                <div>
+                                                    <span class="font-medium">情绪态度:</span>
+                                                    <div class="pl-4 mt-1 text-blue-600">中性 (置信度: 90%)</div>
+                                                </div>
+                                                <div>
+                                                    <span class="font-medium">闲聊检测:</span>
+                                                    <div class="pl-4 mt-1 text-green-600">是闲聊 (置信度: 97%)</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="result-item p-3 border-b">
+                                            <div class="font-medium">查询文本: 我想申请退款</div>
+                                            <div class="mt-2 space-y-2">
+                                                <div>
+                                                    <span class="font-medium">最佳匹配问答:</span>
+                                                    <div class="pl-4 mt-1">
+                                                        <div class="text-blue-600">问题: 如何申请退款?</div>
+                                                        <div class="text-sm text-gray-600 mt-1">答案: 您可以在订单详情页点击"申请退款"按钮，按照提示完成操作。</div>
+                                                        <div class="text-sm text-green-600 mt-1">相似度: 92%</div>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <span class="font-medium">匹配意图:</span>
+                                                    <div class="pl-4 mt-1 text-green-600">退款申请 (置信度: 95%)</div>
+                                                </div>
+                                                <div>
+                                                    <span class="font-medium">情绪态度:</span>
+                                                    <div class="pl-4 mt-1 text-blue-600">中性 (置信度: 88%)</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `,
+                            '文档库': `
+                                <div class="modal-content p-6">
+                                    <h3 class="text-xl font-bold mb-4">文档库</h3>
+                                    <div class="flex justify-between items-center mb-4">
+                                        <button class="upload-btn px-4 py-2 bg-green-500 text-white rounded">上传文档</button>
+                                        <button class="manage-dir-btn px-4 py-2 bg-blue-500 text-white rounded">目录管理</button>
+                                    </div>
+                                    <div class="document-list border rounded p-3 max-h-80 overflow-y-auto">
+                                        <div class="document-item flex justify-between items-center p-2 border-b">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fa fa-folder text-yellow-500"></i>
+                                                <div>
+                                                    <div class="font-medium">产品说明书</div>
+                                                    <div class="text-sm text-gray-500">包含产品功能介绍和使用指南</div>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <button class="view-btn px-2 py-1 bg-blue-500 text-white rounded mr-1">查看</button>
+                                                <button class="edit-btn px-2 py-1 bg-yellow-500 text-white rounded mr-1">编辑</button>
+                                                <button class="delete-btn px-2 py-1 bg-red-500 text-white rounded">删除</button>
+                                            </div>
+                                        </div>
+                                        <div class="document-item flex justify-between items-center p-2 border-b pl-6">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fa fa-file-pdf-o text-red-500"></i>
+                                                <div>
+                                                    <div class="font-medium">产品功能说明.pdf</div>
+                                                    <div class="text-sm text-gray-500">上传人: 张三 | 时间: 2023-10-15</div>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <button class="view-btn px-2 py-1 bg-blue-500 text-white rounded mr-1">查看</button>
+                                                <button class="download-btn px-2 py-1 bg-green-500 text-white rounded mr-1">下载</button>
+                                                <button class="delete-btn px-2 py-1 bg-red-500 text-white rounded">删除</button>
+                                            </div>
+                                        </div>
+                                        <div class="document-item flex justify-between items-center p-2 border-b pl-6">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fa fa-file-word-o text-blue-500"></i>
+                                                <div>
+                                                    <div class="font-medium">使用指南.docx</div>
+                                                    <div class="text-sm text-gray-500">上传人: 李四 | 时间: 2023-10-14</div>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <button class="view-btn px-2 py-1 bg-blue-500 text-white rounded mr-1">查看</button>
+                                                <button class="download-btn px-2 py-1 bg-green-500 text-white rounded mr-1">下载</button>
+                                                <button class="delete-btn px-2 py-1 bg-red-500 text-white rounded">删除</button>
+                                            </div>
+                                        </div>
+                                        <div class="document-item flex justify-between items-center p-2 border-b">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fa fa-folder text-yellow-500"></i>
+                                                <div>
+                                                    <div class="font-medium">技术文档</div>
+                                                    <div class="text-sm text-gray-500">包含API文档和开发指南</div>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <button class="view-btn px-2 py-1 bg-blue-500 text-white rounded mr-1">查看</button>
+                                                <button class="edit-btn px-2 py-1 bg-yellow-500 text-white rounded mr-1">编辑</button>
+                                                <button class="delete-btn px-2 py-1 bg-red-500 text-white rounded">删除</button>
+                                            </div>
+                                        </div>
+                                        <div class="document-item flex justify-between items-center p-2 border-b pl-6">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fa fa-file-code-o text-green-500"></i>
+                                                <div>
+                                                    <div class="font-medium">API文档.md</div>
+                                                    <div class="text-sm text-gray-500">上传人: 王五 | 时间: 2023-10-13</div>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <button class="view-btn px-2 py-1 bg-blue-500 text-white rounded mr-1">查看</button>
+                                                <button class="download-btn px-2 py-1 bg-green-500 text-white rounded mr-1">下载</button>
+                                                <button class="delete-btn px-2 py-1 bg-red-500 text-white rounded">删除</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `,
+                            '对话记录': `
+                                <div class="modal-content p-6">
+                                    <h3 class="text-xl font-bold mb-4">对话记录</h3>
+                                    <div class="mb-4">
+                                        <div class="flex flex-wrap gap-2 mb-2">
+                                            <input type="text" placeholder="用户ID" class="p-2 border rounded">
+                                            <input type="text" placeholder="会话ID" class="p-2 border rounded">
+                                            <select class="p-2 border rounded">
+                                                <option>全部渠道</option>
+                                                <option>Web</option>
+                                                <option>APP</option>
+                                                <option>微信</option>
+                                            </select>
+                                            <input type="date" class="p-2 border rounded">
+                                        </div>
+                                        <button class="search-btn px-4 py-2 bg-blue-500 text-white rounded">搜索</button>
+                                    </div>
+                                    <div class="record-list border rounded p-3 max-h-80 overflow-y-auto">
+                                        <div class="record-item p-3 border-b">
+                                            <div class="flex justify-between items-center mb-2">
+                                                <div class="font-medium">用户: 用户12345</div>
+                                                <div class="text-sm text-gray-500">2023-10-15 14:30:22</div>
+                                            </div>
+                                            <div class="conversation space-y-2">
+                                                <div class="user-message flex gap-2">
+                                                    <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white shrink-0">用</div>
+                                                    <div class="bg-blue-100 p-2 rounded-lg max-w-[70%]">你好，我想咨询一下如何修改密码</div>
+                                                </div>
+                                                <div class="bot-message flex gap-2 justify-end">
+                                                    <div class="bg-green-100 p-2 rounded-lg max-w-[70%]">您好！您可以在个人中心-账户安全-密码修改中进行操作。</div>
+                                                    <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white shrink-0">机</div>
+                                                </div>
+                                                <div class="user-message flex gap-2">
+                                                    <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white shrink-0">用</div>
+                                                    <div class="bg-blue-100 p-2 rounded-lg max-w-[70%]">找到了，谢谢</div>
+                                                </div>
+                                                <div class="bot-message flex gap-2 justify-end">
+                                                    <div class="bg-green-100 p-2 rounded-lg max-w-[70%]">不客气，有其他问题请随时咨询！</div>
+                                                    <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white shrink-0">机</div>
+                                                </div>
+                                            </div>
+                                            <button class="view-btn mt-2 px-3 py-1 bg-blue-500 text-white rounded text-sm">查看完整会话</button>
+                                        </div>
+                                        <div class="record-item p-3 border-b">
+                                            <div class="flex justify-between items-center mb-2">
+                                                <div class="font-medium">用户: 用户67890</div>
+                                                <div class="text-sm text-gray-500">2023-10-15 13:45:11</div>
+                                            </div>
+                                            <div class="conversation space-y-2">
+                                                <div class="user-message flex gap-2">
+                                                    <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white shrink-0">用</div>
+                                                    <div class="bg-blue-100 p-2 rounded-lg max-w-[70%]">我想申请退款</div>
+                                                </div>
+                                                <div class="bot-message flex gap-2 justify-end">
+                                                    <div class="bg-green-100 p-2 rounded-lg max-w-[70%]">您好！请问您是想申请哪个订单的退款呢？</div>
+                                                    <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white shrink-0">机</div>
+                                                </div>
+                                                <div class="user-message flex gap-2">
+                                                    <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white shrink-0">用</div>
+                                                    <div class="bg-blue-100 p-2 rounded-lg max-w-[70%]">订单号OD20231015001</div>
+                                                </div>
+                                                <div class="bot-message flex gap-2 justify-end">
+                                                    <div class="bg-green-100 p-2 rounded-lg max-w-[70%]">已为您查询到该订单，退款申请已提交，请等待审核。</div>
+                                                    <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white shrink-0">机</div>
+                                                </div>
+                                            </div>
+                                            <button class="view-btn mt-2 px-3 py-1 bg-blue-500 text-white rounded text-sm">查看完整会话</button>
+                                        </div>
+                                        <div class="record-item p-3 border-b">
+                                            <div class="flex justify-between items-center mb-2">
+                                                <div class="font-medium">用户: 用户54321</div>
+                                                <div class="text-sm text-gray-500">2023-10-14 16:20:33</div>
+                                            </div>
+                                            <div class="conversation space-y-2">
+                                                <div class="user-message flex gap-2">
+                                                    <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white shrink-0">用</div>
+                                                    <div class="bg-blue-100 p-2 rounded-lg max-w-[70%]">我的快递什么时候能到？</div>
+                                                </div>
+                                                <div class="bot-message flex gap-2 justify-end">
+                                                    <div class="bg-green-100 p-2 rounded-lg max-w-[70%]">您好！请问您方便提供一下订单号吗？</div>
+                                                    <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white shrink-0">机</div>
+                                                </div>
+                                                <div class="user-message flex gap-2">
+                                                    <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white shrink-0">用</div>
+                                                    <div class="bg-blue-100 p-2 rounded-lg max-w-[70%]">订单号OD20231010005</div>
+                                                </div>
+                                                <div class="bot-message flex gap-2 justify-end">
+                                                    <div class="bg-green-100 p-2 rounded-lg max-w-[70%]">已为您查询到，您的快递正在派送中，预计今日内送达。</div>
+                                                    <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white shrink-0">机</div>
+                                                </div>
+                                            </div>
+                                            <button class="view-btn mt-2 px-3 py-1 bg-blue-500 text-white rounded text-sm">查看完整会话</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `,
+                            '评论管理': `
+                                <div class="modal-content p-6">
+                                    <h3 class="text-xl font-bold mb-4">评论管理</h3>
+                                    <div class="mb-4">
+                                        <select class="p-2 border rounded mr-2">
+                                            <option>全部状态</option>
+                                            <option>待审核</option>
+                                            <option>已通过</option>
+                                            <option>已拒绝</option>
+                                        </select>
+                                        <button class="search-btn px-4 py-2 bg-blue-500 text-white rounded">筛选</button>
+                                    </div>
+                                    <div class="comment-list border rounded p-3 max-h-80 overflow-y-auto">
+                                        <div class="comment-item p-3 border-b">
+                                            <div class="flex justify-between items-center mb-2">
+                                                <div class="font-medium">用户: 用户12345</div>
+                                                <div class="text-sm text-yellow-500">待审核</div>
+                                            </div>
+                                            <div class="comment-content mb-2">产品很好用，客服也很耐心，解决问题很快！</div>
+                                            <div class="flex gap-2 mt-2">
+                                                <button class="approve-btn px-3 py-1 bg-green-500 text-white rounded text-sm">通过</button>
+                                                <button class="reject-btn px-3 py-1 bg-red-500 text-white rounded text-sm">拒绝</button>
+                                                <button class="reply-btn px-3 py-1 bg-blue-500 text-white rounded text-sm">回复</button>
+                                            </div>
+                                        </div>
+                                        <div class="comment-item p-3 border-b">
+                                            <div class="flex justify-between items-center mb-2">
+                                                <div class="font-medium">用户: 用户67890</div>
+                                                <div class="text-sm text-green-500">已通过</div>
+                                            </div>
+                                            <div class="comment-content mb-2">功能很强大，但操作有点复杂，希望能简化一下。</div>
+                                            <div class="reply-content bg-gray-100 p-2 rounded mt-2">
+                                                <div class="text-sm font-medium">管理员回复:</div>
+                                                <div class="text-sm mt-1">感谢您的建议，我们会在后续版本中优化操作流程。</div>
+                                            </div>
+                                            <div class="flex gap-2 mt-2">
+                                                <button class="reject-btn px-3 py-1 bg-red-500 text-white rounded text-sm">撤回</button>
+                                                <button class="reply-btn px-3 py-1 bg-blue-500 text-white rounded text-sm">再次回复</button>
+                                            </div>
+                                        </div>
+                                        <div class="comment-item p-3 border-b">
+                                            <div class="flex justify-between items-center mb-2">
+                                                <div class="font-medium">用户: 用户54321</div>
+                                                <div class="text-sm text-red-500">已拒绝</div>
+                                            </div>
+                                            <div class="comment-content mb-2">产品太差了，根本不好用，浪费钱！</div>
+                                            <div class="flex gap-2 mt-2">
+                                                <button class="approve-btn px-3 py-1 bg-green-500 text-white rounded text-sm">通过</button>
+                                                <button class="delete-btn px-3 py-1 bg-red-500 text-white rounded text-sm">删除</button>
+                                            </div>
+                                        </div>
+                                        <div class="comment-item p-3 border-b">
+                                            <div class="flex justify-between items-center mb-2">
+                                                <div class="font-medium">用户: 用户98765</div>
+                                                <div class="text-sm text-green-500">已通过</div>
+                                            </div>
+                                            <div class="comment-content mb-2">客服响应很快，问题解决很及时，赞一个！</div>
+                                            <div class="flex gap-2 mt-2">
+                                                <button class="reject-btn px-3 py-1 bg-red-500 text-white rounded text-sm">撤回</button>
+                                                <button class="reply-btn px-3 py-1 bg-blue-500 text-white rounded text-sm">回复</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `,
+                            '我的贡献': `
+                                <div class="modal-content p-6">
+                                    <h3 class="text-xl font-bold mb-4">我的贡献</h3>
+                                    <div class="tabs mb-4">
+                                        <button class="tab-btn px-4 py-2 bg-blue-500 text-white rounded mr-2">知识贡献</button>
+                                        <button class="tab-btn px-4 py-2 bg-gray-500 text-white rounded mr-2">标注贡献</button>
+                                        <button class="tab-btn px-4 py-2 bg-gray-500 text-white rounded">审核贡献</button>
+                                    </div>
+                                    <div class="contribution-list border rounded p-3 max-h-80 overflow-y-auto">
+                                        <div class="contribution-item p-3 border-b">
+                                            <div class="font-medium">新增问答: 如何修改密码?</div>
+                                            <div class="text-sm text-gray-500 mt-1">提交时间: 2023-10-15 | 状态: 已通过</div>
+                                            <div class="text-sm text-green-500 mt-1">贡献值: +5</div>
+                                        </div>
+                                        <div class="contribution-item p-3 border-b">
+                                            <div class="font-medium">新增意图: 退款申请</div>
+                                            <div class="text-sm text-gray-500 mt-1">提交时间: 2023-10-14 | 状态: 已通过</div>
+                                            <div class="text-sm text-green-500 mt-1">贡献值: +8</div>
+                                        </div>
+                                        <div class="contribution-item p-3 border-b">
+                                            <div class="font-medium">标注会话: 客服会话标注任务1</div>
+                                            <div class="text-sm text-gray-500 mt-1">提交时间: 2023-10-13 | 状态: 已完成</div>
+                                            <div class="text-sm text-green-500 mt-1">贡献值: +3</div>
+                                        </div>
+                                        <div class="contribution-item p-3 border-b">
+                                            <div class="font-medium">审核问答: 如何申请退款?</div>
+                                            <div class="text-sm text-gray-500 mt-1">提交时间: 2023-10-12 | 状态: 已通过</div>
+                                            <div class="text-sm text-green-500 mt-1">贡献值: +2</div>
+                                        </div>
+                                        <div class="contribution-item p-3 border-b">
+                                            <div class="font-medium">修改文档: 使用指南.docx</div>
+                                            <div class="text-sm text-gray-500 mt-1">提交时间: 2023-10-11 | 状态: 已通过</div>
+                                            <div class="text-sm text-green-500 mt-1">贡献值: +4</div>
+                                        </div>
+                                    </div>
+                                    <div class="total-contribution mt-4 p-3 border rounded bg-blue-50">
+                                        <div class="font-medium">总贡献值: <span class="text-blue-600">22</span></div>
+                                        <div class="text-sm text-gray-500 mt-1">等级: 初级贡献者</div>
+                                    </div>
+                                </div>
+                            `,
+                            '数据统计': `
+                                <div class="modal-content p-6">
+                                    <h3 class="text-xl font-bold mb-4">数据统计</h3>
+                                    <div class="tabs mb-4">
+                                        <button class="tab-btn px-4 py-2 bg-blue-500 text-white rounded mr-2">会话数据</button>
+                                        <button class="tab-btn px-4 py-2 bg-gray-500 text-white rounded mr-2">知识数据</button>
+                                        <button class="tab-btn px-4 py-2 bg-gray-500 text-white rounded mr-2">贡献数据</button>
+                                        <button class="tab-btn px-4 py-2 bg-gray-500 text-white rounded">标注数据</button>
+                                    </div>
+                                    <div class="stat-content mb-4">
+                                        <div class="chart-container h-64 border rounded p-3 mb-4">
+                                            <!-- 这里是图表区域 -->
+                                            <div class="text-center text-gray-500 py-12">会话数据图表</div>
+                                        </div>
+                                        <div class="stat-list grid grid-cols-2 gap-4">
+                                            <div class="stat-item p-3 border rounded bg-blue-50">
+                                                <div class="text-sm text-gray-500">今日会话数</div>
+                                                <div class="text-2xl font-bold text-blue-600 mt-1">125</div>
+                                            </div>
+                                            <div class="stat-item p-3 border rounded bg-green-50">
+                                                <div class="text-sm text-gray-500">解决率</div>
+                                                <div class="text-2xl font-bold text-green-600 mt-1">87%</div>
+                                            </div>
+                                            <div class="stat-item p-3 border rounded bg-yellow-50">
+                                                <div class="text-sm text-gray-500">平均响应时间</div>
+                                                <div class="text-2xl font-bold text-yellow-600 mt-1">2.3s</div>
+                                            </div>
+                                            <div class="stat-item p-3 border rounded bg-purple-50">
+                                                <div class="text-sm text-gray-500">用户满意度</div>
+                                                <div class="text-2xl font-bold text-purple-600 mt-1">92%</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="stat-table border rounded overflow-hidden">
+                                        <table class="min-w-full divide-y divide-gray-200">
+                                            <thead class="bg-gray-50">
+                                                <tr>
+                                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">渠道</th>
+                                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">会话数</th>
+                                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">解决率</th>
+                                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">满意度</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="bg-white divide-y divide-gray-200">
+                                                <tr>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Web</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">56</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">89%</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">94%</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">APP</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">42</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">85%</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">91%</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">微信</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">27</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">88%</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">90%</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            `,
+                            '问题检测': `
+                                <div class="modal-content p-6">
+                                    <h3 class="text-xl font-bold mb-4">问题检测</h3>
+                                    <div class="tabs mb-4">
+                                        <button class="tab-btn px-4 py-2 bg-blue-500 text-white rounded mr-2">未解决问题</button>
+                                        <button class="tab-btn px-4 py-2 bg-gray-500 text-white rounded mr-2">低满意度问题</button>
+                                        <button class="tab-btn px-4 py-2 bg-gray-500 text-white rounded mr-2">高频问题</button>
+                                        <button class="tab-btn px-4 py-2 bg-gray-500 text-white rounded">相似问题聚类</button>
+                                    </div>
+                                    <div class="problem-list border rounded p-3 max-h-80 overflow-y-auto">
+                                        <div class="problem-item p-3 border-b bg-red-50">
+                                            <div class="font-medium">无法完成支付</div>
+                                            <div class="text-sm text-gray-500 mt-1">出现频率: 今日12次 | 未解决率: 83%</div>
+                                            <div class="text-sm text-red-500 mt-1">用户反馈: 支付页面卡顿，无法提交订单</div>
+                                            <div class="flex gap-2 mt-2">
+                                                <button class="view-btn px-3 py-1 bg-blue-500 text-white rounded text-sm">查看详情</button>
+                                                <button class="solve-btn px-3 py-1 bg-green-500 text-white rounded text-sm">标记为已解决</button>
+                                            </div>
+                                        </div>
+                                        <div class="problem-item p-3 border-b bg-red-50">
+                                            <div class="font-medium">登录失败</div>
+                                            <div class="text-sm text-gray-500 mt-1">出现频率: 今日8次 | 未解决率: 75%</div>
+                                            <div class="text-sm text-red-500 mt-1">用户反馈: 输入正确密码但提示账号或密码错误</div>
+                                            <div class="flex gap-2 mt-2">
+                                                <button class="view-btn px-3 py-1 bg-blue-500 text-white rounded text-sm">查看详情</button>
+                                                <button class="solve-btn px-3 py-1 bg-green-500 text-white rounded text-sm">标记为已解决</button>
+                                            </div>
+                                        </div>
+                                        <div class="problem-item p-3 border-b bg-yellow-50">
+                                            <div class="font-medium">退款流程复杂</div>
+                                            <div class="text-sm text-gray-500 mt-1">出现频率: 今日5次 | 满意度: 3.2/5</div>
+                                            <div class="text-sm text-yellow-500 mt-1">用户反馈: 退款步骤太多，等待时间长</div>
+                                            <div class="flex gap-2 mt-2">
+                                                <button class="view-btn px-3 py-1 bg-blue-500 text-white rounded text-sm">查看详情</button>
+                                                <button class="optimize-btn px-3 py-1 bg-purple-500 text-white rounded text-sm">优化建议</button>
+                                            </div>
+                                        </div>
+                                        <div class="problem-item p-3 border-b bg-blue-50">
+                                            <div class="font-medium">如何修改个人信息</div>
+                                            <div class="text-sm text-gray-500 mt-1">出现频率: 今日15次 | 解决率: 92%</div>
+                                            <div class="text-sm text-blue-500 mt-1">用户反馈: 找不到修改个人信息的入口</div>
+                                            <div class="flex gap-2 mt-2">
+                                                <button class="view-btn px-3 py-1 bg-blue-500 text-white rounded text-sm">查看详情</button>
+                                                <button class="faq-btn px-3 py-1 bg-green-500 text-white rounded text-sm">添加到FAQ</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `,
+                            '操作日志': `
+                                <div class="modal-content p-6">
+                                    <h3 class="text-xl font-bold mb-4">操作日志</h3>
+                                    <div class="mb-4">
+                                        <div class="flex flex-wrap gap-2 mb-2">
+                                            <input type="text" placeholder="操作用户" class="p-2 border rounded">
+                                            <select class="p-2 border rounded">
+                                                <option>全部操作类型</option>
+                                                <option>新增</option>
+                                                <option>修改</option>
+                                                <option>删除</option>
+                                                <option>发布</option>
+                                                <option>审核</option>
+                                            </select>
+                                            <input type="date" class="p-2 border rounded mr-2">
+                                            <input type="date" class="p-2 border rounded">
+                                        </div>
+                                        <button class="search-btn px-4 py-2 bg-blue-500 text-white rounded">搜索</button>
+                                    </div>
+                                    <div class="log-list border rounded p-3 max-h-80 overflow-y-auto">
+                                        <div class="log-item p-2 border-b">
+                                            <div class="flex justify-between items-center">
+                                                <div class="font-medium">张三</div>
+                                                <div class="text-sm text-gray-500">2023-10-15 14:30:22</div>
+                                            </div>
+                                            <div class="text-sm text-green-500 mt-1">发布知识: 如何修改密码</div>
+                                            <div class="text-sm text-gray-500 mt-1">IP: 192.168.1.100 | 设备: Chrome</div>
+                                        </div>
+                                        <div class="log-item p-2 border-b">
+                                            <div class="flex justify-between items-center">
+                                                <div class="font-medium">李四</div>
+                                                <div class="text-sm text-gray-500">2023-10-15 13:45:11</div>
+                                            </div>
+                                            <div class="text-sm text-blue-500 mt-1">修改问答: 如何申请退款</div>
+                                            <div class="text-sm text-gray-500 mt-1">IP: 192.168.1.101 | 设备: Firefox</div>
+                                        </div>
+                                        <div class="log-item p-2 border-b">
+                                            <div class="flex justify-between items-center">
+                                                <div class="font-medium">王五</div>
+                                                <div class="text-sm text-gray-500">2023-10-14 16:20:33</div>
+                                            </div>
+                                            <div class="text-sm text-red-500 mt-1">删除文档: 旧版使用指南.docx</div>
+                                            <div class="text-sm text-gray-500 mt-1">IP: 192.168.1.102 | 设备: Safari</div>
+                                        </div>
+                                        <div class="log-item p-2 border-b">
+                                            <div class="flex justify-between items-center">
+                                                <div class="font-medium">赵六</div>
+                                                <div class="text-sm text-gray-500">2023-10-14 10:15:44</div>
+                                            </div>
+                                            <div class="text-sm text-yellow-500 mt-1">审核评论: 用户12345的评论</div>
+                                            <div class="text-sm text-gray-500 mt-1">IP: 192.168.1.103 | 设备: Edge</div>
+                                        </div>
+                                        <div class="log-item p-2 border-b">
+                                            <div class="flex justify-between items-center">
+                                                <div class="font-medium">管理员</div>
+                                                <div class="text-sm text-gray-500">2023-10-13 09:00:11</div>
+                                            </div>
+                                            <div class="text-sm text-purple-500 mt-1">系统更新: 知识库升级至v2.0</div>
+                                            <div class="text-sm text-gray-500 mt-1">IP: 192.168.1.1 | 设备: 服务器</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `,
+                            '会话测试': `
+                                <div class="modal-content p-6">
+                                    <h3 class="text-xl font-bold mb-4">会话测试</h3>
+                                    <div class="mb-4">
+                                        <select class="p-2 border rounded mb-2 w-full">
+                                            <option>测试环境</option>
+                                            <option>预发布环境</option>
+                                            <option>生产环境</option>
+                                        </select>
+                                        <div class="flex gap-2 mb-2">
+                                            <input type="text" placeholder="输入测试问题" class="p-2 border rounded flex-1">
+                                            <button class="send-btn px-4 py-2 bg-blue-500 text-white rounded">发送</button>
+                                        </div>
+                                    </div>
+                                    <div class="chat-container border rounded p-3 h-80 overflow-y-auto">
+                                        <div class="chat-message user-message mb-4 flex gap-2">
+                                            <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white shrink-0">测</div>
+                                            <div class="bg-blue-100 p-2 rounded-lg max-w-[70%]">你好，我想咨询一下如何修改密码</div>
+                                        </div>
+                                        <div class="chat-message bot-message mb-4 flex gap-2 justify-end">
+                                            <div class="bg-green-100 p-2 rounded-lg max-w-[70%]">您好！您可以在个人中心-账户安全-密码修改中进行操作。</div>
+                                            <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white shrink-0">机</div>
+                                        </div>
+                                        <div class="chat-message user-message mb-4 flex gap-2">
+                                            <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white shrink-0">测</div>
+                                            <div class="bg-blue-100 p-2 rounded-lg max-w-[70%]">我想申请退款</div>
+                                        </div>
+                                        <div class="chat-message bot-message mb-4 flex gap-2 justify-end">
+                                            <div class="bg-green-100 p-2 rounded-lg max-w-[70%]">您好！请问您是想申请哪个订单的退款呢？</div>
+                                            <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white shrink-0">机</div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 flex justify-between">
+                                        <button class="save-btn px-4 py-2 bg-green-500 text-white rounded">保存测试记录</button>
+                                        <button class="clear-btn px-4 py-2 bg-gray-500 text-white rounded">清空对话</button>
+                                    </div>
+                                </div>
+                            `,
+                            '会话诊断': `
+                                <div class="modal-content p-6">
+                                    <h3 class="text-xl font-bold mb-4">会话诊断</h3>
+                                    <div class="mb-4">
+                                        <input type="text" placeholder="输入会话ID" class="p-2 border rounded mb-2 w-full">
+                                        <button class="search-btn px-4 py-2 bg-blue-500 text-white rounded w-full">查询会话</button>
+                                    </div>
+                                    <div class="diagnosis-result border rounded p-3 max-h-80 overflow-y-auto">
+                                        <div class="diagnosis-header flex justify-between items-center mb-4 pb-2 border-b">
+                                            <div class="font-medium">会话ID: SESSION-20231015-001</div>
+                                            <div class="text-sm text-red-500">诊断结果: 存在问题</div>
+                                        </div>
+                                        <div class="diagnosis-item mb-4">
+                                            <div class="font-medium mb-2">问题1: 意图识别错误</div>
+                                            <div class="text-sm text-gray-500 mb-2">用户输入: "我想修改我的账户信息"
+                                            识别意图: "修改密码"
+                                            正确意图: "修改个人信息"
+                                            置信度: 65%</div>
+                                            <div class="bg-yellow-50 p-2 rounded text-sm">
+                                                <strong>建议:</strong> 优化意图识别模型，增加"修改个人信息"意图的训练数据。
+                                            </div>
+                                        </div>
+                                        <div class="diagnosis-item mb-4">
+                                            <div class="font-medium mb-2">问题2: 回答不完整</div>
+                                            <div class="text-sm text-gray-500 mb-2">用户问题: "如何修改个人信息"
+                                            回答: "您可以在个人中心进行修改。"
+                                            完整回答应包含: "您可以在个人中心-账户设置-个人信息中进行修改，支持修改姓名、手机号、邮箱等信息。"
+                                            相关度: 40%</div>
+                                            <div class="bg-yellow-50 p-2 rounded text-sm">
+                                                <strong>建议:</strong> 完善问答库，补充"如何修改个人信息"的详细回答。
+                                            </div>
+                                        </div>
+                                        <div class="diagnosis-item">
+                                            <div class="font-medium mb-2">问题3: 响应时间过长</div>
+                                            <div class="text-sm text-gray-500 mb-2">平均响应时间: 5.2s
+                                            正常响应时间阈值: < 3s</div>
+                                            <div class="bg-yellow-50 p-2 rounded text-sm">
+                                                <strong>建议:</strong> 检查服务器性能，优化模型响应速度。
+                                            </div>
+                                        </div>
+                                        <div class="diagnosis-summary mt-4 p-3 bg-blue-50 rounded">
+                                            <div class="font-medium mb-2">诊断总结</div>
+                                            <div class="text-sm">
+                                                本次会话共发现3个问题，主要集中在意图识别和回答质量方面。建议优化意图识别模型，完善问答库内容，并检查服务器性能。
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `,
+                            '语义诊断': `
+                                <div class="modal-content p-6">
+                                    <h3 class="text-xl font-bold mb-4">语义诊断</h3>
+                                    <div class="tabs mb-4">
+                                        <button class="tab-btn px-4 py-2 bg-blue-500 text-white rounded mr-2">意图诊断</button>
+                                        <button class="tab-btn px-4 py-2 bg-gray-500 text-white rounded mr-2">实体识别</button>
+                                        <button class="tab-btn px-4 py-2 bg-gray-500 text-white rounded">相似度分析</button>
+                                    </div>
+                                    <div class="mb-4">
+                                        <input type="text" placeholder="输入测试文本" class="p-2 border rounded mb-2 w-full">
+                                        <button class="test-btn px-4 py-2 bg-blue-500 text-white rounded w-full">测试语义</button>
+                                    </div>
+                                    <div class="diagnosis-result border rounded p-3 max-h-72 overflow-y-auto">
+                                        <div class="result-item mb-4 pb-2 border-b">
+                                            <div class="font-medium mb-2">输入文本: 我想修改我的密码</div>
+                                            <div class="mb-2">
+                                                <div class="font-medium text-sm mb-1">意图识别结果:</div>
+                                                <div class="flex items-center gap-2 mb-1">
+                                                    <div class="bg-green-100 px-2 py-1 rounded text-sm">修改密码</div>
+                                                    <div class="text-sm text-gray-500">置信度: 98%</div>
+                                                </div>
+                                                <div class="flex items-center gap-2">
+                                                    <div class="bg-gray-100 px-2 py-1 rounded text-sm">账户设置</div>
+                                                    <div class="text-sm text-gray-500">置信度: 75%</div>
+                                                </div>
+                                            </div>
+                                            <div class="mb-2">
+                                                <div class="font-medium text-sm mb-1">实体识别结果:</div>
+                                                <div class="text-sm text-gray-500">无实体</div>
+                                            </div>
+                                            <div class="">
+                                                <div class="font-medium text-sm mb-1">情感分析:</div>
+                                                <div class="flex items-center gap-2">
+                                                    <div class="bg-blue-100 px-2 py-1 rounded text-sm">中性</div>
+                                                    <div class="text-sm text-gray-500">置信度: 92%</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="result-item mb-4 pb-2 border-b">
+                                            <div class="font-medium mb-2">输入文本: 你们的产品太差了，我要投诉</div>
+                                            <div class="mb-2">
+                                                <div class="font-medium text-sm mb-1">意图识别结果:</div>
+                                                <div class="flex items-center gap-2 mb-1">
+                                                    <div class="bg-green-100 px-2 py-1 rounded text-sm">投诉</div>
+                                                    <div class="text-sm text-gray-500">置信度: 96%</div>
+                                                </div>
+                                                <div class="flex items-center gap-2">
+                                                    <div class="bg-gray-100 px-2 py-1 rounded text-sm">负面反馈</div>
+                                                    <div class="text-sm text-gray-500">置信度: 85%</div>
+                                                </div>
+                                            </div>
+                                            <div class="mb-2">
+                                                <div class="font-medium text-sm mb-1">实体识别结果:</div>
+                                                <div class="text-sm text-gray-500">无实体</div>
+                                            </div>
+                                            <div class="">
+                                                <div class="font-medium text-sm mb-1">情感分析:</div>
+                                                <div class="flex items-center gap-2">
+                                                    <div class="bg-red-100 px-2 py-1 rounded text-sm">愤怒</div>
+                                                    <div class="text-sm text-gray-500">置信度: 94%</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="result-item pb-2 border-b">
+                                            <div class="font-medium mb-2">输入文本: 今天天气怎么样</div>
+                                            <div class="mb-2">
+                                                <div class="font-medium text-sm mb-1">意图识别结果:</div>
+                                                <div class="flex items-center gap-2 mb-1">
+                                                    <div class="bg-gray-100 px-2 py-1 rounded text-sm">闲聊</div>
+                                                    <div class="text-sm text-gray-500">置信度: 97%</div>
+                                                </div>
+                                            </div>
+                                            <div class="mb-2">
+                                                <div class="font-medium text-sm mb-1">实体识别结果:</div>
+                                                <div class="text-sm text-gray-500">无实体</div>
+                                            </div>
+                                            <div class="">
+                                                <div class="font-medium text-sm mb-1">情感分析:</div>
+                                                <div class="flex items-center gap-2">
+                                                    <div class="bg-blue-100 px-2 py-1 rounded text-sm">中性</div>
+                                                    <div class="text-sm text-gray-500">置信度: 90%</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `,
+                            '置信度设置': `
+                                <div class="modal-content p-6">
+                                    <h3 class="text-xl font-bold mb-4">置信度设置</h3>
+                                    <div class="setting-list space-y-6">
+                                        <div class="setting-item border rounded p-4">
+                                            <div class="font-medium mb-3">意图置信度设置</div>
+                                            <div class="mb-2">
+                                                <label class="block text-sm text-gray-500 mb-1">意图识别阈值</label>
+                                                <div class="flex items-center gap-3">
+                                                    <input type="range" min="0" max="100" value="75" class="w-full accent-blue-500">
+                                                    <span class="text-sm font-medium">75%</span>
+                                                </div>
+                                                <p class="text-xs text-gray-400 mt-1">当意图识别置信度高于此阈值时，直接返回对应回答</p>
+                                            </div>
+                                            <div class="mb-2">
+                                                <label class="block text-sm text-gray-500 mb-1">多意图阈值</label>
+                                                <div class="flex items-center gap-3">
+                                                    <input type="range" min="0" max="100" value="50" class="w-full accent-blue-500">
+                                                    <span class="text-sm font-medium">50%</span>
+                                                </div>
+                                                <p class="text-xs text-gray-400 mt-1">当两个意图置信度差值低于此阈值时，认为存在多意图</p>
+                                            </div>
+                                        </div>
+                                        <div class="setting-item border rounded p-4">
+                                            <div class="font-medium mb-3">问答置信度设置</div>
+                                            <div class="mb-2">
+                                                <label class="block text-sm text-gray-500 mb-1">问答匹配阈值</label>
+                                                <div class="flex items-center gap-3">
+                                                    <input type="range" min="0" max="100" value="60" class="w-full accent-blue-500">
+                                                    <span class="text-sm font-medium">60%</span>
+                                                </div>
+                                                <p class="text-xs text-gray-400 mt-1">当问答匹配置信度高于此阈值时，返回对应回答</p>
+                                            </div>
+                                        </div>
+                                        <div class="setting-item border rounded p-4">
+                                            <div class="font-medium mb-3">闲聊置信度设置</div>
+                                            <div class="mb-2">
+                                                <label class="block text-sm text-gray-500 mb-1">闲聊识别阈值</label>
+                                                <div class="flex items-center gap-3">
+                                                    <input type="range" min="0" max="100" value="70" class="w-full accent-blue-500">
+                                                    <span class="text-sm font-medium">70%</span>
+                                                </div>
+                                                <p class="text-xs text-gray-400 mt-1">当闲聊识别置信度高于此阈值时，返回闲聊回答</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-6 flex justify-end gap-3">
+                                        <button class="cancel-btn px-4 py-2 bg-gray-500 text-white rounded">取消</button>
+                                        <button class="save-btn px-4 py-2 bg-blue-500 text-white rounded">保存设置</button>
+                                    </div>
+                                </div>
+                            `,
+                            '多语义设置': `
+                                <div class="modal-content p-6">
+                                    <h3 class="text-xl font-bold mb-4">多语义设置</h3>
+                                    <div class="mb-4">
+                                        <button class="add-btn px-4 py-2 bg-blue-500 text-white rounded mb-4">添加多语义规则</button>
+                                        <div class="rule-list border rounded overflow-hidden">
+                                            <table class="min-w-full divide-y divide-gray-200">
+                                                <thead class="bg-gray-50">
+                                                    <tr>
+                                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">触发词</th>
+                                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">多语义意图</th>
+                                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">处理策略</th>
+                                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="bg-white divide-y divide-gray-200">
+                                                    <tr>
+                                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">账户</td>
+                                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">修改密码、修改个人信息、查询余额</td>
+                                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">询问用户意图</td>
+                                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                            <button class="edit-btn text-blue-500 hover:text-blue-700 mr-3">编辑</button>
+                                                            <button class="delete-btn text-red-500 hover:text-red-700">删除</button>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">退款</td>
+                                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">申请退款、查询退款进度、退款说明</td>
+                                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">询问用户意图</td>
+                                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                            <button class="edit-btn text-blue-500 hover:text-blue-700 mr-3">编辑</button>
+                                                            <button class="delete-btn text-red-500 hover:text-red-700">删除</button>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">订单</td>
+                                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">查询订单、取消订单、修改订单</td>
+                                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">询问用户意图</td>
+                                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                            <button class="edit-btn text-blue-500 hover:text-blue-700 mr-3">编辑</button>
+                                                            <button class="delete-btn text-red-500 hover:text-red-700">删除</button>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="mt-6 flex justify-end gap-3">
+                                        <button class="cancel-btn px-4 py-2 bg-gray-500 text-white rounded">取消</button>
+                                        <button class="save-btn px-4 py-2 bg-blue-500 text-white rounded">保存设置</button>
+                                    </div>
+                                </div>
+                            `,
+                            '文本纠错设置': `
+                                <div class="modal-content p-6">
+                                    <h3 class="text-xl font-bold mb-4">文本纠错设置</h3>
+                                    <div class="setting-list space-y-6">
+                                        <div class="setting-item border rounded p-4">
+                                            <div class="font-medium mb-3">基础设置</div>
+                                            <div class="mb-3">
+                                                <label class="flex items-center gap-2">
+                                                    <input type="checkbox" checked class="w-5 h-5 text-blue-500 border-gray-300 rounded">
+                                                    <span class="text-sm">启用错别字纠错</span>
+                                                </label>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="flex items-center gap-2">
+                                                    <input type="checkbox" checked class="w-5 h-5 text-blue-500 border-gray-300 rounded">
+                                                    <span class="text-sm">启用同音字纠错</span>
+                                                </label>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="flex items-center gap-2">
+                                                    <input type="checkbox" checked class="w-5 h-5 text-blue-500 border-gray-300 rounded">
+                                                    <span class="text-sm">启用形近字纠错</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="setting-item border rounded p-4">
+                                            <div class="font-medium mb-3">自定义纠错规则</div>
+                                            <div class="flex gap-2 mb-3">
+                                                <input type="text" placeholder="错误文本" class="p-2 border rounded flex-1">
+                                                <input type="text" placeholder="正确文本" class="p-2 border rounded flex-1">
+                                                <button class="add-rule-btn px-4 py-2 bg-blue-500 text-white rounded">添加</button>
+                                            </div>
+                                            <div class="rule-list border rounded overflow-hidden max-h-40 overflow-y-auto">
+                                                <table class="min-w-full divide-y divide-gray-200">
+                                                    <thead class="bg-gray-50">
+                                                        <tr>
+                                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">错误文本</th>
+                                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">正确文本</th>
+                                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="bg-white divide-y divide-gray-200">
+                                                        <tr>
+                                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">帐密</td>
+                                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">密码</td>
+                                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                                <button class="delete-btn text-red-500 hover:text-red-700">删除</button>
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">支负宝</td>
+                                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">支付宝</td>
+                                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                                <button class="delete-btn text-red-500 hover:text-red-700">删除</button>
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">手几</td>
+                                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">手机</td>
+                                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                                <button class="delete-btn text-red-500 hover:text-red-700">删除</button>
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-6 flex justify-end gap-3">
+                                        <button class="cancel-btn px-4 py-2 bg-gray-500 text-white rounded">取消</button>
+                                        <button class="save-btn px-4 py-2 bg-blue-500 text-white rounded">保存设置</button>
+                                    </div>
+                                </div>
+                            `,
+                            '权限设置': `
+                                <div class="modal-content p-6">
+                                    <h3 class="text-xl font-bold mb-4">权限设置</h3>
+                                    <div class="tabs mb-4">
+                                        <button class="tab-btn px-4 py-2 bg-blue-500 text-white rounded mr-2">模块权限</button>
+                                        <button class="tab-btn px-4 py-2 bg-gray-500 text-white rounded">数据权限</button>
+                                    </div>
+                                    <div class="permission-list border rounded overflow-hidden">
+                                        <table class="min-w-full divide-y divide-gray-200">
+                                            <thead class="bg-gray-50">
+                                                <tr>
+                                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">角色</th>
+                                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">模块</th>
+                                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">查看</th>
+                                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">编辑</th>
+                                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">删除</th>
+                                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">审核</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="bg-white divide-y divide-gray-200">
+                                                <tr>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" rowspan="3">管理员</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">技能管理</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" checked disabled></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" checked disabled></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" checked disabled></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" checked disabled></td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">知识管理</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" checked disabled></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" checked disabled></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" checked disabled></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" checked disabled></td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">系统设置</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" checked disabled></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" checked disabled></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" checked disabled></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" checked disabled></td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" rowspan="3">运营人员</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">技能管理</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" checked disabled></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" checked disabled></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" disabled></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" checked disabled></td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">知识管理</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" checked disabled></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" checked disabled></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" disabled></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" checked disabled></td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">系统设置</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" checked disabled></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" disabled></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" disabled></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" disabled></td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" rowspan="3">普通用户</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">技能管理</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" checked disabled></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" disabled></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" disabled></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" disabled></td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">知识管理</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" checked disabled></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" disabled></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" disabled></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" disabled></td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">系统设置</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" disabled></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" disabled></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" disabled></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><input type="checkbox" disabled></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="mt-6 flex justify-end gap-3">
+                                        <button class="cancel-btn px-4 py-2 bg-gray-500 text-white rounded">取消</button>
+                                        <button class="save-btn px-4 py-2 bg-blue-500 text-white rounded">保存设置</button>
+                                    </div>
+                                </div>
+                            `
+                        };
+
+                        // 浮窗控制函数
+                        function showModal(moduleName) {
+                            // 检查是否已存在浮窗容器
+                            let modalContainer = document.getElementById('modal-container');
+                            if (!modalContainer) {
+                                modalContainer = document.createElement('div');
+                                modalContainer.id = 'modal-container';
+                                modalContainer.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+                                document.body.appendChild(modalContainer);
+                            }
+
+                            // 设置浮窗内容
+                            modalContainer.innerHTML = `
+                                <div class="bg-white dark:bg-dark-card rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden transform transition-all">
+                                    <div class="flex justify-between items-center p-4 border-b dark:border-gray-700">
+                                        <h3 class="text-xl font-bold text-gray-900 dark:text-white">${moduleName}</h3>
+                                        <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors duration-200">
+                                            <i class="fa fa-times text-xl"></i>
+                                        </button>
+                                    </div>
+                                    <div class="flex-grow overflow-y-auto">
+                                        ${modalContents[moduleName]}
+                                    </div>
+                                </div>
+                            `;
+
+                            // 显示浮窗
+                            modalContainer.style.display = 'flex';
+                        }
+
+                        function closeModal() {
+                            const modalContainer = document.getElementById('modal-container');
+                            if (modalContainer) {
+                                modalContainer.style.display = 'none';
+                            }
+                        }
+
+                        // 点击浮窗外部关闭浮窗
+                        document.addEventListener('click', function(e) {
+                            const modalContainer = document.getElementById('modal-container');
+                            if (modalContainer && e.target === modalContainer) {
+                                closeModal();
+                            }
+                        });
+                        </script>
+                    </nav>
+                </div>
+                
+                <!-- Bot管理模块 -->
+                <div class="mb-8">
+                    <h3 class="text-md font-medium text-purple-400 mb-3 border-b border-purple-900 pb-2">Bot管理模块</h3>
+                    <nav class="flex flex-wrap gap-3">
+                        {% set bot_modules = ['Bot 管理', '知识发布', '意图模型管理', '问答模型管理', '测试集管理'] %}
+                        {% for module in bot_modules if module in level2_modules %}
+                        {% if module == 'Bot 管理' or module == '意图模型管理' %}
+                        <a href="/module/NGD智能客服对话模块/{{ module }}" class="px-4 py-2 bg-gray-800 hover:bg-purple-900 text-gray-200 rounded-md transition-all duration-200 whitespace-nowrap flex items-center gap-2 cursor-pointer">
+                            <i class="fa fa-robot text-purple-400"></i> {{ module }}
+                        </a>
+                        {% else %}
+                        <button onclick="showModal('{{ module }}')" class="px-4 py-2 bg-gray-800 hover:bg-purple-900 text-gray-200 rounded-md transition-all duration-200 whitespace-nowrap flex items-center gap-2 cursor-pointer">
+                            <i class="fa fa-robot text-purple-400"></i> {{ module }}
+                        </button>
+                        {% endif %}
+                        {% endfor %}
+                    </nav>
+                </div>
+                
+                <!-- 审核模块 -->
+                <div class="mb-8">
+                    <h3 class="text-md font-medium text-yellow-400 mb-3 border-b border-yellow-900 pb-2">审核模块</h3>
+                    <nav class="flex flex-wrap gap-3">
+                        {% set audit_modules = ['数据审核', '流程片段审核', 'Bot 审核', '审核开关'] %}
+                        {% for module in audit_modules if module in level2_modules %}
+                        <button onclick="showModal('{{ module }}')" class="px-4 py-2 bg-gray-800 hover:bg-yellow-900 text-gray-200 rounded-md transition-all duration-200 whitespace-nowrap flex items-center gap-2 cursor-pointer">
+                            <i class="fa fa-check-circle text-yellow-400"></i> {{ module }}
+                        </button>
+                        {% endfor %}
+                    </nav>
+                </div>
+                
+                <!-- 数据标注与分析 -->
+                <div class="mb-8">
+                    <h3 class="text-md font-medium text-red-400 mb-3 border-b border-red-900 pb-2">数据标注与分析</h3>
+                    <nav class="flex flex-wrap gap-3">
+                        {% set data_modules = ['会话标注', '扩展问推荐', 'nlu 分析', '文档库', '对话记录', '评论管理', '我的贡献'] %}
+                        {% for module in data_modules if module in level2_modules %}
+                        <button onclick="showModal('{{ module }}')" class="px-4 py-2 bg-gray-800 hover:bg-red-900 text-gray-200 rounded-md transition-all duration-200 whitespace-nowrap flex items-center gap-2 cursor-pointer">
+                            <i class="fa fa-bar-chart text-red-400"></i> {{ module }}
+                        </button>
+                        {% endfor %}
+                    </nav>
+                </div>
+                
+                <!-- 统计与诊断 -->
+                <div class="mb-8">
+                    <h3 class="text-md font-medium text-cyan-400 mb-3 border-b border-cyan-900 pb-2">统计与诊断</h3>
+                    <nav class="flex flex-wrap gap-3">
+                        {% set stat_modules = ['数据统计', '问题检测', '操作日志', '会话测试', '会话诊断', '语义诊断'] %}
+                        {% for module in stat_modules if module in level2_modules %}
+                        <button onclick="showModal('{{ module }}')" class="px-4 py-2 bg-gray-800 hover:bg-cyan-900 text-gray-200 rounded-md transition-all duration-200 whitespace-nowrap flex items-center gap-2 cursor-pointer">
+                            <i class="fa fa-search text-cyan-400"></i> {{ module }}
+                        </button>
+                        {% endfor %}
+                    </nav>
+                </div>
+                
+                <!-- 系统设置 -->
+                <div>
+                    <h3 class="text-md font-medium text-gray-400 mb-3 border-b border-gray-700 pb-2">系统设置</h3>
+                    <nav class="flex flex-wrap gap-3">
+                        {% set setting_modules = ['置信度设置', '多语义设置', '文本纠错设置', '权限设置'] %}
+                        {% for module in setting_modules if module in level2_modules %}
+                        <button onclick="showModal('{{ module }}')" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-md transition-all duration-200 whitespace-nowrap flex items-center gap-2 cursor-pointer">
+                            <i class="fa fa-wrench text-gray-400"></i> {{ module }}
+                        </button>
+                        {% endfor %}
+                    </nav>
+                </div>
+            </div>
+            {% else %}
+            <div class="mt-6 border-b border-gray-200 dark:border-gray-700">
+                <nav class="flex space-x-8">
+                    <a href="/module/技能管理/技能库" class="pb-4 text-lg font-medium text-primary border-b-2 border-primary dark:text-primary transition-all duration-200" id="nav-skill-library">
+                        技能库
+                    </a>
+                    <a href="/module/技能管理/我的技能" class="pb-4 text-lg font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 border-b-2 border-transparent transition-all duration-200" id="nav-my-skills">
+                        我的技能
+                    </a>
+                </nav>
+            </div>
+            {% endif %}
+        </header>
+
+        <!-- 批量操作工具栏 -->
+        <div id="batch-actions" class="flex flex-wrap justify-between items-center mb-6 p-4 bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 hidden">
+            <div class="flex items-center space-x-4 mb-3 sm:mb-0">
+                <input type="checkbox" id="select-all-skills" class="w-5 h-5 text-primary focus:ring-primary border-gray-300 dark:border-gray-600 rounded">
+                <label for="select-all-skills" class="text-sm text-gray-700 dark:text-gray-300">全选</label>
+                <span id="selected-count" class="text-sm text-gray-500 dark:text-gray-400">已选择: 0</span>
+            </div>
+            <div class="flex flex-wrap gap-3">
+                <button id="batch-delete-btn" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors duration-200 flex items-center opacity-50 cursor-not-allowed" disabled>
+                    <i class="fa fa-trash mr-1"></i> 批量删除
+                </button>
+                <button id="import-btn" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md transition-colors duration-200 flex items-center">
+                    <i class="fa fa-upload mr-1"></i> 导入
+                </button>
+                <button id="export-btn" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors duration-200 flex items-center">
+                    <i class="fa fa-download mr-1"></i> 导出
+                </button>
+                <button class="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-md transition-colors duration-200 flex items-center">
+                    <i class="fa fa-plus mr-1"></i> 新增
+                </button>
+            </div>
+        </div>
+
+        <!-- 搜索和筛选 -->
+        <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
+            <div class="relative w-full sm:w-auto">
+                <input type="text" id="skill-search" placeholder="搜索技能..." class="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent w-full sm:w-64 bg-white dark:bg-dark-card text-gray-900 dark:text-white">
+                <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            </div>
+            <select id="category-filter" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-dark-card text-gray-900 dark:text-white">
+                <option value="all">全部行业</option>
+                <option value="互联网">互联网</option>
+                <option value="金融">金融</option>
+                <option value="教育">教育</option>
+                <option value="医疗">医疗</option>
+                <option value="制造业">制造业</option>
+            </select>
+        </div>
+
+        <!-- 技能列表 -->
+        <div id="skills-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- 技能卡片将通过JavaScript动态生成 -->
+        </div>
+
+        <!-- 无搜索结果提示 -->
+        <div id="no-search-results" class="hidden text-center py-12 col-span-full">
+            <div class="text-gray-400 text-5xl mb-4"><i class="fa fa-search"></i></div>
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">没有找到匹配的技能</h3>
+            <p class="text-gray-500 dark:text-gray-400">请尝试使用其他搜索词或清除筛选条件</p>
+        </div>
+    </div>
+</body>
+</html>

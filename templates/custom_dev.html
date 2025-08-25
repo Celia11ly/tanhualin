@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ level1_name }} - 自定义开发</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = { theme: { extend: { colors: { primary: '#3B82F6', secondary: '#10B981', dark: '#121212', 'dark-card': '#1E1E1E' } } } };
+    </script>
+</head>
+<body class="custom-dev bg-gray-50 dark:bg-dark text-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
+    <!-- 页面标题和返回按钮 -->
+    <div class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-800">
+        <h1 class="text-2xl font-bold">{{ level1_name }} - 自定义开发</h1>
+        <a href="/" class="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-md flex items-center transition-colors duration-200">
+            <i class="fa fa-home mr-2"></i>返回首页
+        </a>
+    </div>
+
+    <div class="flex-1 container mx-auto p-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- 图片编辑区 -->
+        <div class="lg:col-span-2 bg-white dark:bg-dark-card rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-800">
+            <h2 class="text-lg font-semibold mb-4 flex items-center"><i class="fa fa-picture-o mr-2 text-primary"></i>图片编辑区</h2>
+            <div class="aspect-video bg-gray-100 dark:bg-gray-800 rounded-md mb-4 flex items-center justify-center overflow-hidden relative">
+                <!-- 示例图片 -->
+                <img src="https://picsum.photos/800/450" alt="示例图片" class="w-full h-full object-cover" />
+                <!-- 编辑工具覆盖层 -->
+                <div class="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
+                    <div class="bg-white dark:bg-dark-card rounded-md shadow-lg p-2 flex gap-2">
+                        <button class="image-tool px-3 py-1 rounded text-sm bg-primary text-white hover:bg-blue-600 transition-colors" data-action="edit">编辑</button>
+                        <button class="image-tool px-3 py-1 rounded text-sm bg-primary text-white hover:bg-blue-600 transition-colors" data-action="crop">剪裁</button>
+                        <button class="image-tool px-3 py-1 rounded text-sm bg-primary text-white hover:bg-blue-600 transition-colors" data-action="logo">添加Logo</button>
+                        <button class="image-tool px-3 py-1 rounded text-sm bg-primary text-white hover:bg-blue-600 transition-colors" data-action="replace">替换</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 子模块导航 -->
+        <div class="lg:col-span-1 bg-white dark:bg-dark-card rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-800">
+            <h2 class="text-lg font-semibold mb-4 flex items-center"><i class="fa fa-th-large mr-2 text-primary"></i>子模块</h2>
+            <div class="flex flex-col gap-2 mb-6">
+                <button id="btn-components" class="text-left px-4 py-2 rounded border-2 border-primary text-primary font-medium hover:bg-blue-50 dark:hover:bg-blue-900 dark:bg-opacity-20 transition-colors flex items-center">
+                    <i class="fa fa-cubes mr-2"></i>自定义元件
+                </button>
+                <button id="btn-themes" class="text-left px-4 py-2 rounded border-2 border-transparent text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center">
+                    <i class="fa fa-paint-brush mr-2"></i>自定义主题
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 子模块内容区 -->
+    <div class="container mx-auto p-4 mt-2 bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-gray-800">
+        <!-- 搜索和筛选区域 -->
+        <div class="flex flex-col md:flex-row gap-4 mb-4">
+            <div class="flex-1 relative">
+                <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="text" id="item-search" placeholder="搜索元件或主题..." class="w-full pl-10 pr-4 py-2 rounded border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" />
+            </div>
+            <div class="w-full md:w-48">
+                <select id="group-filter" class="w-full px-4 py-2 rounded border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent appearance-none bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTAgMTVMMCA1aDIwdjEwTDAgMTV6IiBmaWxsPSIjODg4IiBmaWxsLW9wYWNpdHk9IjAuNSIvPjwvc3ZnPg==')] bg-right bg-no-repeat bg-[length:16px_16px] bg-[padding:10px] cursor-pointer">
+                    <option value="all">所有分组</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 自定义元件内容区 -->
+        <div id="component-content" class="min-h-[300px]">
+            <h3 class="text-lg font-medium mb-4 flex items-center"><i class="fa fa-cubes mr-2 text-primary"></i>自定义元件列表</h3>
+            <div id="components-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+        </div>
+
+        <!-- 自定义主题内容区 -->
+        <div id="theme-content" class="min-h-[300px] hidden">
+            <h3 class="text-lg font-medium mb-4 flex items-center"><i class="fa fa-paint-brush mr-2 text-primary"></i>自定义主题列表</h3>
+            <div id="themes-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化函数
+            function initCustomDevModule() {
+                // 默认显示自定义元件子模块
+                switchToComponent();
+
+                // 添加子模块切换事件
+                document.getElementById('btn-components').addEventListener('click', switchToComponent);
+                document.getElementById('btn-themes').addEventListener('click', switchToTheme);
+
+                // 初始化筛选功能
+                initFilter();
+
+                // 初始化图片编辑工具
+                initImageEditor();
+            }
+
+            // 切换到自定义元件子模块
+            function switchToComponent() {
+                // 更新导航高亮
+                document.getElementById('btn-components').classList.add('text-primary', 'border-primary');
+                document.getElementById('btn-components').classList.remove('text-gray-500', 'dark:text-gray-400', 'border-transparent');
+                document.getElementById('btn-themes').classList.remove('text-primary', 'border-primary');
+                document.getElementById('btn-themes').classList.add('text-gray-500', 'dark:text-gray-400', 'border-transparent');
+
+                // 显示元件内容，隐藏主题内容
+                document.getElementById('component-content').classList.remove('hidden');
+                document.getElementById('theme-content').classList.add('hidden');
+
+                // 生成并渲染元件数据
+                const components = generateMockComponents();
+                renderComponents(components);
+                updateGroupFilter(components, 'component');
+            }
+
+            // 切换到自定义主题子模块
+            function switchToTheme() {
+                // 更新导航高亮
+                document.getElementById('btn-themes').classList.add('text-primary', 'border-primary');
+                document.getElementById('btn-themes').classList.remove('text-gray-500', 'dark:text-gray-400', 'border-transparent');
+                document.getElementById('btn-components').classList.remove('text-primary', 'border-primary');
+                document.getElementById('btn-components').classList.add('text-gray-500', 'dark:text-gray-400', 'border-transparent');
+
+                // 显示主题内容，隐藏元件内容
+                document.getElementById('theme-content').classList.remove('hidden');
+                document.getElementById('component-content').classList.add('hidden');
+
+                // 生成并渲染主题数据
+                const themes = generateMockThemes();
+                renderThemes(themes);
+                updateGroupFilter(themes, 'theme');
+            }
+
+            // 更新分组筛选下拉框
+            function updateGroupFilter(items, type) {
+                const groupFilter = document.getElementById('group-filter');
+                if (!groupFilter) return;
+
+                // 获取所有不重复的组
+                const groups = [...new Set(items.map(item => item.group))];
+
+                // 清空并添加默认选项
+                groupFilter.innerHTML = '<option value="all">所有分组</option>';
+
+                // 添加所有组选项
+                groups.forEach(group => {
+                    const option = document.createElement('option');
+                    option.value = group;
+                    option.textContent = group;
+                    groupFilter.appendChild(option);
+                });
+            }
+
+            // 初始化筛选功能
+            function initFilter() {
+                const searchInput = document.getElementById('item-search');
+                const groupFilter = document.getElementById('group-filter');
+
+                // 防抖函数
+                function debounce(func, delay) {
+                    let timeoutId;
+                    return function() {
+                        const context = this;
+                        const args = arguments;
+                        clearTimeout(timeoutId);
+                        timeoutId = setTimeout(() => func.apply(context, args), delay);
+                    };
+                }
+
+                // 筛选项目函数
+                function filterItems() {
+                    const searchTerm = searchInput.value.toLowerCase();
+                    const group = groupFilter.value;
+
+                    if (!document.getElementById('component-content').classList.contains('hidden')) {
+                        filterComponents(searchTerm, group);
+                    } else {
+                        filterThemes(searchTerm, group);
+                    }
+                }
+
+                // 应用防抖并添加事件监听
+                const debouncedFilter = debounce(filterItems, 300);
+                searchInput.addEventListener('input', debouncedFilter);
+                groupFilter.addEventListener('change', filterItems);
+            }
+
+            // 筛选元件
+            function filterComponents(searchTerm, group) {
+                const components = generateMockComponents();
+                const filtered = components.filter(component => {
+                    const matchesSearch = component.name.toLowerCase().includes(searchTerm) || component.description.toLowerCase().includes(searchTerm);
+                    const matchesGroup = group === 'all' || component.group === group;
+                    return matchesSearch && matchesGroup;
+                });
+                renderComponents(filtered);
+            }
+
+            // 筛选主题
+            function filterThemes(searchTerm, group) {
+                const themes = generateMockThemes();
+                const filtered = themes.filter(theme => {
+                    const matchesSearch = theme.name.toLowerCase().includes(searchTerm) || theme.description.toLowerCase().includes(searchTerm);
+                    const matchesGroup = group === 'all' || theme.group === group;
+                    return matchesSearch && matchesGroup;
+                });
+                renderThemes(filtered);
+            }
+
+            // 初始化图片编辑工具
+            function initImageEditor() {
+                const editTools = document.querySelectorAll('.image-tool');
+                editTools.forEach(tool => {
+                    tool.addEventListener('click', function() {
+                        showNotification(`执行${this.textContent}操作`);
+                    });
+                });
+            }
+
+            // 显示通知
+            function showNotification(message) {
+                const notification = document.createElement('div');
+                notification.className = 'fixed bottom-4 right-4 bg-blue-500 text-white px-4 py-2 rounded shadow-lg z-50 transform transition-all duration-300 translate-y-0';
+                notification.textContent = message;
+                document.body.appendChild(notification);
+
+                // 3秒后隐藏提示
+                setTimeout(() => {
+                    notification.classList.add('translate-y-20');
+                    setTimeout(() => document.body.removeChild(notification), 300);
+                }, 3000);
+            }
+
+            // 生成模拟元件数据
+            function generateMockComponents() {
+                const groups = ['基础元件', '表单元件', '导航元件', '展示元件'];
+                const icons = ['fa-square', 'fa-circle', 'fa-triangle', 'fa-star', 'fa-heart', 'fa-diamond', 'fa-bolt', 'fa-cog'];
+
+                return Array.from({length: 12}, (_, i) => ({
+                    id: `component-${Date.now()}-${i}`,
+                    name: ['按钮', '输入框', '下拉菜单', '复选框', '单选框', '滑块', '标签页', '折叠面板', '弹窗', '提示框', '加载中', '分页'][i],
+                    description: `这是一个${['基础', '高级', '自定义', '通用'][Math.floor(Math.random() * 4)]}${['按钮', '输入框', '下拉菜单', '复选框', '单选框', '滑块'][Math.floor(Math.random() * 6)]}元件`,
+                    group: groups[Math.floor(Math.random() * groups.length)],
+                    icon: icons[Math.floor(Math.random() * icons.length)],
+                    isActive: Math.random() > 0.3,
+                    createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toLocaleDateString()
+                }));
+            }
+
+            // 生成模拟主题数据
+            function generateMockThemes() {
+                const groups = ['基础主题', '深色主题', '浅色主题', '自定义主题'];
+                const icons = ['fa-paint-brush', 'fa-palette', 'fa-sun-o', 'fa-moon-o', 'fa-snowflake-o', 'fa-leaf', 'fa-fire', 'fa-tint'];
+
+                return Array.from({length: 12}, (_, i) => ({
+                    id: `theme-${Date.now()}-${i}`,
+                    name: ['默认主题', '暗黑主题', '明亮主题', '简约主题', '活力主题', '专业主题', '科技主题', '自然主题', '商务主题', '创意主题', '经典主题', '未来主题'][i],
+                    description: `这是一个${['现代', '简约', '复古', '未来主义'][Math.floor(Math.random() * 4)]}风格的主题`,
+                    group: groups[Math.floor(Math.random() * groups.length)],
+                    icon: icons[Math.floor(Math.random() * icons.length)],
+                    isActive: Math.random() > 0.3,
+                    createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toLocaleDateString()
+                }));
+            }
+
+            // 渲染元件列表
+            function renderComponents(components) {
+                const container = document.getElementById('components-list');
+                if (!container) return;
+
+                container.innerHTML = '';
+
+                // 按组分类
+                const componentsByGroup = {};
+                components.forEach(component => {
+                    if (!componentsByGroup[component.group]) componentsByGroup[component.group] = [];
+                    componentsByGroup[component.group].push(component);
+                });
+
+                // 渲染每个组
+                for (const group in componentsByGroup) {
+                    // 组标题
+                    const groupHeader = document.createElement('div');
+                    groupHeader.className = 'mb-4 w-full';
+                    groupHeader.innerHTML = `<h4 class="font-medium text-gray-700 dark:text-gray-300 border-l-4 border-primary pl-2 py-1">${group}</h4>`;
+                    container.appendChild(groupHeader);
+
+                    // 渲染组内元件
+                    componentsByGroup[group].forEach(component => {
+                        const listItem = document.createElement('div');
+                        listItem.className = 'bg-gray-50 dark:bg-gray-800 rounded-md shadow-sm p-3 flex items-center justify-between border border-gray-200 dark:border-gray-700';
+                        listItem.setAttribute('data-item-name', component.name);
+                        listItem.setAttribute('data-item-group', component.group);
+
+                        listItem.innerHTML = `
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-primary bg-opacity-10 rounded-full flex items-center justify-center text-primary">
+                                    <i class="fa ${component.icon}"></i>
+                                </div>
+                                <div>
+                                    <h5 class="font-medium text-sm">${component.name}</h5>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">${component.description}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs ${component.isActive ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}">
+                                    ${component.isActive ? '启用' : '禁用'}
+                                </span>
+                                <button class="text-gray-400 hover:text-primary" onclick="showItemActions('${component.id}', 'component')">
+                                    <i class="fa fa-ellipsis-v"></i>
+                                </button>
+                            </div>
+                        `;
+                        container.appendChild(listItem);
+                    });
+                }
+            }
+
+            // 渲染主题列表
+            function renderThemes(themes) {
+                const container = document.getElementById('themes-list');
+                if (!container) return;
+
+                container.innerHTML = '';
+
+                // 按组分类
+                const themesByGroup = {};
+                themes.forEach(theme => {
+                    if (!themesByGroup[theme.group]) themesByGroup[theme.group] = [];
+                    themesByGroup[theme.group].push(theme);
+                });
+
+                // 渲染每个组
+                for (const group in themesByGroup) {
+                    // 组标题
+                    const groupHeader = document.createElement('div');
+                    groupHeader.className = 'mb-4 w-full';
+                    groupHeader.innerHTML = `<h4 class="font-medium text-gray-700 dark:text-gray-300 border-l-4 border-primary pl-2 py-1">${group}</h4>`;
+                    container.appendChild(groupHeader);
+
+                    // 渲染组内主题
+                    themesByGroup[group].forEach(theme => {
+                        const listItem = document.createElement('div');
+                        listItem.className = 'bg-gray-50 dark:bg-gray-800 rounded-md shadow-sm p-3 flex items-center justify-between border border-gray-200 dark:border-gray-700';
+                        listItem.setAttribute('data-item-name', theme.name);
+                        listItem.setAttribute('data-item-group', theme.group);
+
+                        listItem.innerHTML = `
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-primary bg-opacity-10 rounded-full flex items-center justify-center text-primary">
+                                    <i class="fa ${theme.icon}"></i>
+                                </div>
+                                <div>
+                                    <h5 class="font-medium text-sm">${theme.name}</h5>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">${theme.description}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs ${theme.isActive ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}">
+                                    ${theme.isActive ? '启用' : '禁用'}
+                                </span>
+                                <button class="text-gray-400 hover:text-primary" onclick="showItemActions('${theme.id}', 'theme')">
+                                    <i class="fa fa-ellipsis-v"></i>
+                                </button>
+                            </div>
+                        `;
+                        container.appendChild(listItem);
+                    });
+                }
+            }
+
+            // 显示项目操作菜单
+            window.showItemActions = function(id, type) {
+                // 实际应用中，这里应该显示一个下拉菜单或模态框
+                // 包含重命名、启用/禁用、预览、保存、代码上传、发布等选项
+                showNotification(`显示${type === 'component' ? '元件' : '主题'}操作菜单: ID=${id}`);
+            }
+
+            // 初始化自定义开发模块
+            initCustomDevModule();
+        });
+    </script>
+</body>
+</html>

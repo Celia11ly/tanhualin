@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模块分层展示</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#8B5CF6',
+                        dark: '#121212',
+                        'dark-card': '#1E1E1E'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        };
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .module-card {
+                @apply bg-dark-card rounded-lg shadow-lg overflow-hidden transition-all duration-300 hover:shadow-2xl hover:scale-[1.02];
+            }
+            .level1-card {
+                @apply flex flex-col items-center justify-center p-6 text-center cursor-pointer;
+            }
+            .level1-card:hover .level1-icon {
+                @apply scale-110 rotate-12;
+            }
+            .level1-icon {
+                @apply text-primary text-4xl mb-4 transition-transform duration-300;
+            }
+        }
+    </style>
+</head>
+<body class="bg-dark text-white min-h-screen font-sans">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <header class="mb-12 text-center py-8 border-b border-gray-800">
+            <h1 class="text-4xl font-bold text-white mb-2">通用管理导航</h1>
+            <p class="text-gray-400">点击模块进入详情页面</p>
+        </header>
+
+        <div id="modules-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for level1_name, level2_modules in modules.items() %}
+                <a href="/module/{{ level1_name | replace(' ', '-') }}" class="module-card">
+                    <div class="level1-card">
+                        <i class="fa fa-cube level1-icon"></i>
+                        <h2 class="text-xl font-semibold text-white mb-2">{{ level1_name }}</h2>
+                        <p class="text-gray-400 text-sm">{{ level2_modules | length }} 个子模块</p>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        // 为模块分配图标
+        function get_icon(module_name) {
+            const icons = {
+                '技能管理': 'graduation-cap',
+                '自定义开发': 'code',
+                '会话详情': 'comment',
+                '运营管理': 'line-chart',
+                'NGD智能客服对话能力平台': 'robot',
+                // 默认图标
+                'default': 'cube'
+            };
+            
+            for (const key in icons) {
+                if (module_name.includes(key)) {
+                    return icons[key];
+                }
+            }
+            return icons['default'];
+        }
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 为每个模块卡片添加动画效果
+            const cards = document.querySelectorAll('.module-card');
+            cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, 100 * index);
+            });
+        });
+
+        // 默认展开第一个一级模块
+        document.addEventListener('DOMContentLoaded', function() {
+            const firstLevel1 = document.querySelector('.level1-header');
+            if (firstLevel1) {
+                const level1Id = firstLevel1.getAttribute('onclick').match(/'([^']+)'/)[1];
+                toggleLevel2(level1Id);
+            }
+        });
+    </script>
+</body>
+</html>

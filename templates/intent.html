@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>意图管理</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- 自定义 Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#10b981',
+                        accent: '#8b5cf6',
+                        danger: '#ef4444',
+                        warning: '#f59e0b',
+                        info: '#06b6d4',
+                        'dark-bg': '#111827',
+                        'dark-card': '#1f2937',
+                        'dark-input': '#374151',
+                        'dark-border': '#4b5563',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <!-- 自定义工具类 -->
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .transition-bg {
+                transition: background-color 0.3s ease;
+            }
+            .transition-all-custom {
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .shadow-custom {
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+            .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+            }
+            .scrollbar-hide {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+        }
+    </style>
+    <style>
+        body {
+            background-color: #111827;
+            font-family: 'Inter', sans-serif;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        body.loaded {
+            opacity: 1;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .hover-scale:hover {
+            transform: scale(1.02);
+        }
+    </style>
+</head>
+<body class="text-gray-200 min-h-screen flex flex-col">
+    <!-- 顶部导航 -->
+    <header class="bg-dark-card shadow-md z-30 sticky top-0">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <i class="fa fa-lightbulb-o text-warning text-2xl"></i>
+                <h1 class="text-xl font-bold text-white">意图管理系统</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="relative">
+                    <input type="text" placeholder="全局搜索..." class="bg-dark-input border border-gray-700 rounded-lg px-4 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary w-64">
+                    <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"></i>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i class="fa fa-bell-o text-gray-400 hover:text-white cursor-pointer transition-colors"></i>
+                    <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center cursor-pointer hover:bg-primary/90 transition-colors">
+                        <span class="font-medium text-white">{{ current_user.initials }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="flex-1 container mx-auto px-4 py-6">
+        <!-- 面包屑导航 -->
+        <nav class="mb-6 text-sm">
+            <ol class="flex items-center gap-2">
+                <li><a href="/" class="text-gray-400 hover:text-primary transition-colors">首页</a></li>
+                <li><i class="fa fa-chevron-right text-xs text-gray-500"></i></li>
+                <li><a href="/module/{{ level1_name | replace(' ', '-') }}" class="text-gray-400 hover:text-primary transition-colors">{{ level1_name }}</a></li>
+                <li><i class="fa fa-chevron-right text-xs text-gray-500"></i></li>
+                <li><span class="text-primary font-medium">意图</span></li>
+            </ol>
+        </nav>
+
+        <!-- 页面标题和操作按钮 -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <div>
+                <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-white mb-1">意图管理</h2>
+                <p class="text-gray-400">管理和维护系统中的各种意图及其示例</p>
+            </div>
+            <div class="flex gap-3 w-full sm:w-auto flex-wrap">
+                <button id="import-intent-btn" class="px-4 py-2 bg-secondary hover:bg-secondary/90 text-white rounded-lg transition-all-custom flex items-center justify-center gap-2 flex-1 sm:flex-none">
+                    <i class="fa fa-upload"></i>导入Excel
+                </button>
+                <button id="export-intent-btn" class="px-4 py-2 bg-accent hover:bg-accent/90 text-white rounded-lg transition-all-custom flex items-center justify-center gap-2 flex-1 sm:flex-none">
+                    <i class="fa fa-download"></i>导出Excel
+                </button>
+                <button id="add-intent-btn" class="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-all-custom flex items-center justify-center gap-2 flex-1 sm:flex-none">
+                    <i class="fa fa-plus"></i>新增意图
+                </button>
+            </div>
+        </div>
+
+        <!-- 意图分类筛选 -->
+        <div class="bg-dark-card rounded-lg p-4 mb-6 shadow-custom hover-scale transition-all-custom">
+            <div class="flex flex-wrap gap-4 items-center">
+                <div class="flex-1 min-w-[200px]">
+                    <label class="block text-sm font-medium text-gray-400 mb-1">意图类型筛选</label>
+                    <select id="intent-type-filter" class="w-full bg-dark-input border border-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+                        <option value="all">全部意图</option>
+                        <option value="normal">普通意图</option>
+                        <option value="system">系统意图</option>
+                        <option value="fallback">兜底意图</option>
+                    </select>
+                </div>
+                <div class="flex-1 min-w-[200px]">
+                    <label class="block text-sm font-medium text-gray-400 mb-1">意图状态</label>
+                    <select id="intent-status-filter" class="w-full bg-dark-input border border-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+                        <option value="all">全部状态</option>
+                        <option value="active">已启用</option>
+                        <option value="inactive">已禁用</option>
+                        <option value="draft">草稿</option>
+                    </select>
+                </div>
+                <div class="flex-1 min-w-[200px]">
+                    <label class="block text-sm font-medium text-gray-400 mb-1">搜索意图</label>
+                    <div class="relative">
+                        <input type="text" id="intent-search-input" placeholder="搜索意图名称或描述..." class="w-full bg-dark-input border border-gray-700 rounded-lg px-4 py-2 pl-10 focus:outline-none focus:ring-2 focus:ring-primary">
+                        <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 意图列表 -->
+        <div class="bg-dark-card rounded-lg shadow-custom overflow-hidden hover-scale transition-all-custom">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="bg-dark-bg border-b border-gray-700 text-left">
+                            <th class="px-6 py-4 text-sm font-semibold text-gray-400">意图ID</th>
+                            <th class="px-6 py-4 text-sm font-semibold text-gray-400">意图名称</th>
+                            <th class="px-6 py-4 text-sm font-semibold text-gray-400">意图类型</th>
+                            <th class="px-6 py-4 text-sm font-semibold text-gray-400">示例数量</th>
+                            <th class="px-6 py-4 text-sm font-semibold text-gray-400">状态</th>
+                            <th class="px-6 py-4 text-sm font-semibold text-gray-400">创建时间</th>
+                            <th class="px-6 py-4 text-sm font-semibold text-gray-400">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="intent-table-body">
+                        {% if intent_data %}
+                            {% for intent in intent_data %}
+                                <tr class="data-row border-b border-gray-700 hover:bg-dark-bg/50 transition-colors">
+                                    <td class="px-6 py-4 text-sm">{{ intent.id }}</td>
+                                    <td class="px-6 py-4 text-sm font-medium text-white">{{ intent.name }}</td>
+                                    <td class="px-6 py-4 text-sm">
+                                        {% if intent.type == 'normal' %}
+                                            <span class="px-2 py-1 bg-primary/20 text-primary rounded-full text-xs font-medium">普通意图</span>
+                                        {% elif intent.type == 'system' %}
+                                            <span class="px-2 py-1 bg-secondary/20 text-secondary rounded-full text-xs font-medium">系统意图</span>
+                                        {% elif intent.type == 'fallback' %}
+                                            <span class="px-2 py-1 bg-warning/20 text-warning rounded-full text-xs font-medium">兜底意图</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 text-sm">{{ intent.sample_count }}</td>
+                                    <td class="px-6 py-4 text-sm">
+                                        {% if intent.status == 'active' %}
+                                            <span class="px-2 py-1 bg-green-500/20 text-green-500 rounded-full text-xs font-medium">已启用</span>
+                                        {% elif intent.status == 'inactive' %}
+                                            <span class="px-2 py-1 bg-red-500/20 text-red-500 rounded-full text-xs font-medium">已禁用</span>
+                                        {% elif intent.status == 'draft' %}
+                                            <span class="px-2 py-1 bg-yellow-500/20 text-yellow-500 rounded-full text-xs font-medium">草稿</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-400">{{ intent.created_at }}</td>
+                                    <td class="px-6 py-4 text-sm">
+                                        <div class="flex gap-2">
+                                            <button class="text-blue-500 hover:text-blue-400 transition-colors" title="查看详情" onclick="viewIntent('{{ intent.id }}')">
+                                                <i class="fa fa-eye"></i>
+                                            </button>
+                                            <button class="text-yellow-500 hover:text-yellow-400 transition-colors" title="编辑意图" onclick="editIntent('{{ intent.id }}')">
+                                                <i class="fa fa-pencil"></i>
+                                            </button>
+                                            <button class="text-green-500 hover:text-green-400 transition-colors" title="示例管理" onclick="manageExamples('{{ intent.id }}')">
+                                                <i class="fa fa-list"></i>
+                                            </button>
+                                            <button class="text-purple-500 hover:text-purple-400 transition-colors" title="响应问题检测" onclick="detectResponseIssues('{{ intent.id }}')">
+                                                <i class="fa fa-exclamation-circle"></i>
+                                            </button>
+                                            <button class="text-info-500 hover:text-info-400 transition-colors" title="模板支持" onclick="manageTemplates('{{ intent.id }}')">
+                                                <i class="fa fa-file-text-o"></i>
+                                            </button>
+                                            <button class="text-red-500 hover:text-red-400 transition-colors" title="删除意图" onclick="deleteIntent('{{ intent.id }}')">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr id="noResults" class="text-center">
+                                <td colspan="7" class="px-6 py-12 text-gray-500">
+                                    <i class="fa fa-search text-4xl mb-3"></i>
+                                    <p>未找到符合条件的意图数据</p>
+                                    <button id="resetFilters" class="mt-3 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors">
+                                        重置筛选条件
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+            <!-- 分页 -->
+            {% if intent_data and intent_data|length > 0 %}
+                <div class="px-6 py-4 border-t border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div class="text-sm text-gray-400">
+                        显示 {{ start_index }} 到 {{ end_index }} 条，共 {{ total_count }} 条记录
+                    </div>
+                    <div class="flex gap-1">
+                        <button class="px-3 py-1 rounded border border-gray-700 hover:bg-dark-card transition-colors disabled:opacity-50 disabled:cursor-not-allowed" {% if current_page == 1 %}disabled{% endif %} onclick="goToPage(1)">
+                            <i class="fa fa-angle-double-left"></i>
+                        </button>
+                        <button class="px-3 py-1 rounded border border-gray-700 hover:bg-dark-card transition-colors disabled:opacity-50 disabled:cursor-not-allowed" {% if current_page == 1 %}disabled{% endif %} onclick="goToPage(current_page - 1)">
+                            <i class="fa fa-angle-left"></i>
+                        </button>
+                        {% for page in pages_to_show %}
+                            <button class="px-3 py-1 rounded border {% if page == current_page %}border-primary bg-primary/20 text-primary{% else %}border-gray-700 hover:bg-dark-card transition-colors{% endif %}" onclick="goToPage({{ page }})">{{ page }}</button>
+                        {% endfor %}
+                        <button class="px-3 py-1 rounded border border-gray-700 hover:bg-dark-card transition-colors disabled:opacity-50 disabled:cursor-not-allowed" {% if current_page == total_pages %}disabled{% endif %} onclick="goToPage(current_page + 1)">
+                            <i class="fa fa-angle-right"></i>
+                        </button>
+                        <button class="px-3 py-1 rounded border border-gray-700 hover:bg-dark-card transition-colors disabled:opacity-50 disabled:cursor-not-allowed" {% if current_page == total_pages %}disabled{% endif %} onclick="goToPage(total_pages)">
+                            <i class="fa fa-angle-double-right"></i>
+                        </button>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </main>
+
+    <!-- 通用浮窗组件 -->
+    <div id="modal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center">
+        <div class="bg-dark-card rounded-lg shadow-xl w-full max-w-2xl p-6 m-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-2 sticky top-0 bg-dark-card z-10">
+                <h3 id="modal-title" class="text-xl font-semibold text-white">功能浮窗</h3>
+                <button id="close-modal" class="text-gray-400 hover:text-white transition-colors">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            <div id="modal-content" class="text-gray-300 mb-6">
+                <!-- 浮窗内容将通过JavaScript动态插入 -->
+            </div>
+            <div class="flex justify-end gap-3 sticky bottom-0 bg-dark-card pt-4 border-t border-gray-700 z-10">
+                <button id="cancel-modal" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors">取消</button>
+                <button id="confirm-modal" class="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 浮窗控制函数
+        function showModal(title, content) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-content').innerHTML = content;
+            document.getElementById('modal').classList.remove('hidden');
+            document.getElementById('modal').classList.add('flex');
+            document.body.classList.add('overflow-hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+            document.getElementById('modal').classList.remove('flex');
+            document.body.classList.remove('overflow-hidden');
+        }
+
+        // 意图操作函数
+        function viewIntent(intentId) {
+            showModal('意图详情', `
+                <div class="space-y-6">
+                    <div class="p-4 bg-dark-bg rounded-lg">
+                        <h4 class="font-medium text-lg mb-3 text-white">基本信息</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-sm text-gray-400 mb-1">意图ID</p>
+                                <p class="font-medium" id="detail-id">${intentId}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-400 mb-1">意图名称</p>
+                                <p class="font-medium" id="detail-name"></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-400 mb-1">意图类型</p>
+                                <p class="font-medium" id="detail-type"></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-400 mb-1">状态</p>
+                                <p class="font-medium" id="detail-status"></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-400 mb-1">创建时间</p>
+                                <p class="font-medium" id="detail-created"></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-400 mb-1">更新时间</p>
+                                <p class="font-medium" id="detail-updated"></p>
+                            </div>
+                        </div>
+                    </div>
+                     
+                    <div class="p-4 bg-dark-bg rounded-lg">
+                        <h4 class="font-medium text-lg mb-3 text-white">意图描述</h4>
+                        <p id="detail-description" class="whitespace-pre-line"></p>
+                    </div>
+                     
+                    <div class="p-4 bg-dark-bg rounded-lg">
+                        <h4 class="font-medium text-lg mb-3 text-white">意图示例</h4>
+                        <div id="detail-examples" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+                    </div>
+                </div>
+            `);
+            // 这里应该通过AJAX获取意图详情数据并填充
+        }
+
+        function editIntent(intentId) {
+            showModal('编辑意图', `
+                <div class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-1">意图名称 <span class="text-red-500">*</span></label>
+                            <input type="text" id="edit-name" class="w-full bg-dark-input border border-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-1">意图类型 <span class="text-red-500">*</span></label>
+                            <select id="edit-type" class="w-full bg-dark-input border border-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+                                <option value="normal">普通意图</option>
+                                <option value="system">系统意图</option>
+                                <option value="fallback">兜底意图</option>
+                            </select>
+                        </div>
+                    </div>
+                     
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1">意图描述</label>
+                        <textarea id="edit-description" class="w-full bg-dark-input border border-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary h-24"></textarea>
+                    </div>
+                </div>
+            `);
+            // 这里应该通过AJAX获取意图数据并填充表单
+        }
+
+        function manageExamples(intentId) {
+            showModal('示例管理', `
+                <div class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <h4 class="font-medium text-lg text-white">示例列表</h4>
+                        <button id="add-example-btn" class="px-3 py-1 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors text-sm flex items-center gap-1">
+                            <i class="fa fa-plus"></i>添加示例
+                        </button>
+                    </div>
+                     
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b border-gray-700 text-left">
+                                    <th class="px-4 py-2 text-sm font-semibold text-gray-400">示例ID</th>
+                                    <th class="px-4 py-2 text-sm font-semibold text-gray-400">示例内容</th>
+                                    <th class="px-4 py-2 text-sm font-semibold text-gray-400">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="examples-table-body">
+                                <!-- 示例数据将通过AJAX加载 -->
+                                <tr class="text-center">
+                                    <td colspan="3" class="px-4 py-8 text-gray-500">加载中...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `);
+            // 这里应该通过AJAX获取示例数据并填充表格
+        }
+
+        function detectResponseIssues(intentId) {
+            showModal('响应问题检测', `
+                <div class="space-y-6">
+                    <div class="p-4 bg-dark-bg rounded-lg">
+                        <h4 class="font-medium text-lg mb-3 text-white">意图信息</h4>
+                        <p><span class="text-gray-400">意图ID:</span> ${intentId}</p>
+                        <p><span class="text-gray-400">意图名称:</span> <span id="issue-intent-name"></span></p>
+                    </div>
+                     
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="font-medium text-lg text-white">检测结果</h4>
+                            <button id="run-detection" class="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1">
+                                <i class="fa fa-refresh"></i>重新检测
+                            </button>
+                        </div>
+                        <div id="detection-results" class="space-y-4">
+                            <!-- 检测结果将通过AJAX加载 -->
+                            <div class="text-center py-8 text-gray-500">加载中...</div>
+                        </div>
+                    </div>
+                </div>
+            `);
+            // 这里应该通过AJAX获取检测结果
+        }
+
+        function manageTemplates(intentId) {
+            showModal('模板支持', `
+                <div class="space-y-6">
+                    <div class="p-4 bg-dark-bg rounded-lg">
+                        <h4 class="font-medium text-lg mb-3 text-white">意图信息</h4>
+                        <p><span class="text-gray-400">意图ID:</span> ${intentId}</p>
+                        <p><span class="text-gray-400">意图名称:</span> <span id="template-intent-name"></span></p>
+                    </div>
+                     
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="font-medium text-lg text-white">可用模板</h4>
+                            <button id="add-template-btn" class="px-3 py-1 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors text-sm flex items-center gap-1">
+                                <i class="fa fa-plus"></i>添加模板
+                            </button>
+                        </div>
+                        <div id="templates-list" class="space-y-3">
+                            <!-- 模板数据将通过AJAX加载 -->
+                            <div class="text-center py-8 text-gray-500">加载中...</div>
+                        </div>
+                    </div>
+                </div>
+            `);
+            // 这里应该通过AJAX获取模板数据
+        }
+
+        function deleteIntent(intentId) {
+            showModal('确认删除', `
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+                        <i class="fa fa-exclamation-triangle text-red-500 text-xl"></i>
+                        <p class="text-red-400">您确定要删除此意图吗？此操作不可撤销。</p>
+                    </div>
+                    <p>意图ID: <span class="font-medium text-primary">${intentId}</span></p>
+                    <p class="text-sm text-gray-400">删除此意图会同时删除其关联的所有示例和模板数据。</p>
+                </div>
+            `);
+            // 覆盖确认按钮事件
+            document.getElementById('confirm-modal').onclick = function() {
+                // 这里应该执行删除操作的AJAX请求
+                closeModal();
+            };
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // 关闭浮窗事件
+            document.getElementById('close-modal').addEventListener('click', closeModal);
+            document.getElementById('cancel-modal').addEventListener('click', closeModal);
+            document.getElementById('confirm-modal').addEventListener('click', closeModal);
+
+            // 点击浮窗外部关闭
+            document.getElementById('modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeModal();
+                }
+            });
+
+            // 导入导出按钮事件
+            document.getElementById('import-intent-btn').addEventListener('click', function() {
+                showModal('导入意图', `
+                    <div class="space-y-4">
+                        <p>请选择Excel文件进行导入。文件格式请参考<a href="#" class="text-primary hover:underline">导入模板</a>。</p>
+                        <div class="border-2 border-dashed border-gray-600 rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer">
+                            <input type="file" id="import-file" accept=".xlsx, .xls" class="hidden">
+                            <label for="import-file" class="cursor-pointer">
+                                <i class="fa fa-cloud-upload text-4xl text-gray-400 mb-3"></i>
+                                <p class="text-gray-400 mb-1">拖放文件到此处或</p>
+                                <p class="text-primary font-medium">选择文件</p>
+                            </label>
+                        </div>
+                        <div id="file-info" class="hidden p-3 bg-dark-bg rounded-lg"></div>
+                    </div>
+                `);
+            });
+
+            document.getElementById('export-intent-btn').addEventListener('click', function() {
+                // 这里应该触发导出Excel的AJAX请求
+                showModal('导出意图', `
+                    <div class="space-y-4">
+                        <p>请选择导出选项：</p>
+                        <div class="space-y-3">
+                            <div class="flex items-center">
+                                <input type="radio" id="export-all" name="export-option" value="all" checked class="mr-2 text-primary focus:ring-primary h-4 w-4">
+                                <label for="export-all">导出所有意图</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="radio" id="export-selected" name="export-option" value="selected" class="mr-2 text-primary focus:ring-primary h-4 w-4">
+                                <label for="export-selected">导出当前筛选结果</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="radio" id="export-type" name="export-option" value="type" class="mr-2 text-primary focus:ring-primary h-4 w-4">
+                                <label for="export-type">按意图类型导出</label>
+                                <select id="export-type-select" class="ml-2 bg-dark-input border border-gray-700 text-white rounded-lg px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary hidden">
+                                    <option value="normal">普通意图</option>
+                                    <option value="system">系统意图</option>
+                                    <option value="fallback">兜底意图</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                `);
+                // 显示/隐藏类型选择框
+                document.querySelectorAll('input[name="export-option"]').forEach(radio => {
+                    radio.addEventListener('change', function() {
+                        document.getElementById('export-type-select').classList.toggle('hidden', this.value !== 'type');
+                    });
+                });
+                // 覆盖确认按钮事件
+                document.getElementById('confirm-modal').onclick = function() {
+                    // 这里应该执行导出操作
+                    closeModal();
+                };
+            });
+
+            // 新增意图按钮事件
+            document.getElementById('add-intent-btn').addEventListener('click', function() {
+                showModal('新增意图', `
+                    <div class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-1">意图名称 <span class="text-red-500">*</span></label>
+                                <input type="text" id="new-name" class="w-full bg-dark-input border border-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-1">意图类型 <span class="text-red-500">*</span></label>
+                                <select id="new-type" class="w-full bg-dark-input border border-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+                                    <option value="normal">普通意图</option>
+                                    <option value="system">系统意图</option>
+                                    <option value="fallback">兜底意图</option>
+                                </select>
+                            </div>
+                        </div>
+                         
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-1">意图描述</label>
+                            <textarea id="new-description" class="w-full bg-dark-input border border-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary h-24"></textarea>
+                        </div>
+                    </div>
+                `);
+                // 覆盖确认按钮事件
+                document.getElementById('confirm-modal').onclick = function() {
+                    // 这里应该执行新增意图操作
+                    closeModal();
+                };
+            });
+
+            // 搜索和过滤功能
+            const searchInput = document.getElementById('intent-search-input');
+            const typeFilter = document.getElementById('intent-type-filter');
+            const statusFilter = document.getElementById('intent-status-filter');
+            const dataRows = document.querySelectorAll('.data-row');
+            const noResults = document.getElementById('noResults');
+
+            // 添加防抖处理
+            function debounce(func, delay) {
+                let timeout;
+                return function() {
+                    const context = this;
+                    const args = arguments;
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(context, args), delay);
+                };
+            }
+
+            function filterIntents() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const typeValue = typeFilter.value;
+                const statusValue = statusFilter.value;
+                let hasVisibleRows = false;
+
+                dataRows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    let matchesSearch = false;
+                    let matchesType = true;
+                    let matchesStatus = true;
+
+                    // 检查是否匹配搜索词
+                    cells.forEach(cell => {
+                        if (cell.textContent.toLowerCase().includes(searchTerm)) {
+                            matchesSearch = true;
+                        }
+                    });
+
+                    // 检查是否匹配类型筛选
+                    if (typeValue !== 'all') {
+                        const typeCell = row.querySelector('td:nth-child(3) span');
+                        if (typeCell) {
+                            const cellText = typeCell.textContent;
+                            if ((typeValue === 'normal' && !cellText.includes('普通意图')) ||
+                                (typeValue === 'system' && !cellText.includes('系统意图')) ||
+                                (typeValue === 'fallback' && !cellText.includes('兜底意图'))) {
+                                matchesType = false;
+                            }
+                        } else {
+                            matchesType = false;
+                        }
+                    }
+
+                    // 检查是否匹配状态筛选
+                    if (statusValue !== 'all') {
+                        const statusCell = row.querySelector('td:nth-child(5) span');
+                        if (statusCell) {
+                            const cellText = statusCell.textContent;
+                            if ((statusValue === 'active' && !cellText.includes('已启用')) ||
+                                (statusValue === 'inactive' && !cellText.includes('已禁用')) ||
+                                (statusValue === 'draft' && !cellText.includes('草稿'))) {
+                                matchesStatus = false;
+                            }
+                        } else {
+                            matchesStatus = false;
+                        }
+                    }
+
+                    // 显示或隐藏行
+                    if (matchesSearch && matchesType && matchesStatus) {
+                        row.style.display = '';
+                        hasVisibleRows = true;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                // 显示或隐藏无结果提示
+                if (noResults) {
+                    noResults.style.display = hasVisibleRows ? 'none' : 'block';
+                }
+            }
+
+            const debouncedFilterIntents = debounce(filterIntents, 300);
+            searchInput.addEventListener('input', debouncedFilterIntents);
+            typeFilter.addEventListener('change', filterIntents);
+            statusFilter.addEventListener('change', filterIntents);
+
+            // 重置筛选条件
+            if (document.getElementById('resetFilters')) {
+                document.getElementById('resetFilters').addEventListener('click', function() {
+                    searchInput.value = '';
+                    typeFilter.value = 'all';
+                    statusFilter.value = 'all';
+                    filterIntents();
+                });
+            }
+
+            // 初始化时执行一次过滤
+            filterIntents();
+
+            // 页面加载动画
+            setTimeout(() => {
+                document.body.classList.add('loaded');
+            }, 100);
+        });
+    </script>
+</body>
+</html>

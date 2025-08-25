@@ -1,0 +1,21 @@
+# render.yaml
+
+services:
+  - type: web
+    name: flask-ngd-app
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.7
+      - key: DEBUG
+        value: false
+    regions:
+      - oregon
+    plan: free
+    healthCheckPath: /
+    healthCheckTimeout: 10
+    autoDeploy: true
+
+# 可选：如果需要数据库等其他服务，可以在这里添加

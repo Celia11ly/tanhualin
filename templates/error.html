@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>错误 - 功能模块导航</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#8B5CF6',
+                        dark: '#121212',
+                        'dark-card': '#1E1E1E'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        };
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .error-card {
+                @apply bg-dark-card rounded-lg shadow-lg p-8 text-center max-w-md mx-auto;
+            }
+            .error-icon {
+                @apply text-red-500 text-6xl mb-6;
+            }
+            .error-title {
+                @apply text-2xl font-bold text-white mb-4;
+            }
+            .error-message {
+                @apply text-gray-400 mb-6;
+            }
+            .back-button {
+                @apply bg-primary hover:bg-primary/90 text-white font-medium py-2 px-6 rounded-lg transition-all duration-300;
+            }
+        }
+    </style>
+</head>
+<body class="bg-dark text-white min-h-screen flex items-center justify-center p-4">
+    <div class="error-card">
+        <i class="fa fa-exclamation-circle text-red-500 text-5xl mb-4"></i>
+        <h1 class="text-2xl font-bold mb-2">出错了</h1>
+        <p class="text-gray-400 mb-6">{{ message }}</p>
+        <a href="/" class="inline-block bg-primary hover:bg-primary/90 text-white font-medium py-2 px-6 rounded-lg transition-colors duration-300">
+            返回首页
+        </a>
+    </div>
+</body>
+</html>

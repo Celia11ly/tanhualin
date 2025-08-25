@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ level2_name }} - 功能详情</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#8B5CF6',
+                        dark: '#121212',
+                        'dark-card': '#1E1E1E',
+                        'dark-input': '#2D2D2D'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        };
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .feature-card {
+                @apply bg-dark-card rounded-lg shadow-md p-5 transition-all duration-300 hover:shadow-lg;
+            }
+            .search-input {
+                @apply bg-dark-input border border-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary w-full md:w-1/3;
+            }
+            .filter-select {
+                @apply bg-dark-input border border-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary;
+            }
+            .data-table {
+                @apply min-w-full divide-y divide-gray-700;
+            }
+            .data-th {
+                @apply px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider;
+            }
+            .data-td {
+                @apply px-6 py-4 whitespace-nowrap text-sm text-gray-300;
+            }
+        }
+    </style>
+</head>
+<body class="bg-dark text-white min-h-screen font-sans">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <header class="mb-8 text-center py-6 border-b border-gray-800">
+            <a href="/module/{{ level1_name | replace(' ', '-') }}" class="inline-block text-primary mb-4"><i class="fa fa-arrow-left mr-2"></i>返回{{ level1_name }}</a>
+            <h1 class="text-3xl font-bold text-white mb-2">{{ level2_name }}</h1>
+            <p class="text-gray-400">{{ level1_name }} - 功能详情</p>
+        </header>
+
+        {% if level2_name == '会话流程' %}
+        <div class="mb-8 flex flex-wrap gap-4 justify-center feature-card p-4">
+            <button title="配置" class="flex items-center bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300"><i class="fa fa-cogs mr-2"></i>配置</button>
+            <button title="引用模板" class="flex items-center bg-secondary hover:bg-secondary/90 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300"><i class="fa fa-file-text-o mr-2"></i>引用模板</button>
+            <button title="跳转" class="flex items-center bg-accent hover:bg-accent/90 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300"><i class="fa fa-exchange mr-2"></i>跳转</button>
+            <button title="流程检查" class="flex items-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300"><i class="fa fa-check-circle-o mr-2"></i>流程检查</button>
+            <button title="流程审核" class="flex items-center bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300"><i class="fa fa-gavel mr-2"></i>流程审核</button>
+            <button title="调试" class="flex items-center bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300"><i class="fa fa-bug mr-2"></i>调试</button>
+            <button title="剧本测试" class="flex items-center bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300"><i class="fa fa-play-circle-o mr-2"></i>剧本测试</button>
+        </div>
+        {% endif %}
+
+        <div class="mb-8 feature-card">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                <h2 class="text-xl font-semibold mb-4 md:mb-0 flex items-center"><i class="fa fa-database text-accent mr-2"></i>会话列表</h2>
+                <div class="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                    <input type="text" id="search-input" placeholder="搜索会话..." class="search-input">
+                    <select id="filter-select" class="filter-select">
+                        <option value="all">全部会话</option>
+                    {% if level2_name == '会话流程' %}
+                            <option value="active">活跃会话</option>
+                            <option value="completed">已完成会话</option>
+                            <option value="draft">草稿状态</option>
+                            <option value="template">模板会话</option>
+                        {% elif '用户' in level2_name or '权限' in level2_name %}
+                            <option value="管理员">管理员</option>
+                            <option value="普通用户">普通用户</option>
+                            <option value="访客">访客</option>
+                        {% elif '数据' in level2_name or '统计' in level2_name %}
+                            <option value="quarter1">1-3月</option>
+                            <option value="quarter2">4-6月</option>
+                            <option value="quarter3">7-9月</option>
+                            <option value="quarter4">10-12月</option>
+                        {% else %}
+                            <option value="进行中">进行中</option>
+                            <option value="已完成">已完成</option>
+                            <option value="已暂停">已暂停</option>
+                        {% endif %}
+                        </select>
+                </div>
+            </div>
+
+            {% if '数据' in level2_name or '统计' in level2_name %}
+                <div class="mb-6">
+                    <canvas id="dataChart" height="250"></canvas>
+                </div>
+            {% endif %}
+
+            <div class="overflow-x-auto">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            {% if level2_name == '会话流程' %}
+                                <th class="data-th">会话ID</th>
+                                <th class="data-th">会话名称</th>
+                                <th class="data-th">创建时间</th>
+                                <th class="data-th">最后修改</th>
+                                <th class="data-th">版本</th>
+                                <th class="data-th">状态</th>
+                                <th class="data-th">操作</th>
+                            {% elif '用户' in level2_name or '权限' in level2_name %}
+                                <th class="data-th">ID</th>
+                                <th class="data-th">姓名</th>
+                                <th class="data-th">邮箱</th>
+                                <th class="data-th">角色</th>
+                                <th class="data-th">状态</th>
+                                <th class="data-th">操作</th>
+                            {% elif '数据' in level2_name or '统计' in level2_name %}
+                                <th class="data-th">月份</th>
+                                <th class="data-th">数值</th>
+                                <th class="data-th">增长率</th>
+                                <th class="data-th">操作</th>
+                            {% else %}
+                                <th class="data-th">ID</th>
+                                <th class="data-th">名称</th>
+                                <th class="data-th">描述</th>
+                                <th class="data-th">进度</th>
+                                <th class="data-th">状态</th>
+                                <th class="data-th">操作</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody id="data-table-body" class="divide-y divide-gray-700">
+                            {% for item in sample_data %}
+                            <tr class="data-row">
+                                {% if level2_name == '会话流程' %}
+                                    <td class="data-td">{{ item.id }}</td>
+                                    <td class="data-td">{{ item.name }}</td>
+                                    <td class="data-td">{{ item.created_at }}</td>
+                                    <td class="data-td">{{ item.updated_at }}</td>
+                                    <td class="data-td">{{ item.version }}</td>
+                                    <td class="data-td">
+                                        <span class="px-2 py-1 rounded-full text-xs {{ 'bg-green-500' if item.status == 'active' else 'bg-blue-500' if item.status == 'completed' else 'bg-yellow-500' if item.status == 'draft' else 'bg-purple-500' }}">{{ '活跃' if item.status == 'active' else '已完成' if item.status == 'completed' else '草稿' if item.status == 'draft' else '模板' }}</span>
+                                    </td>
+                                    <td class="data-td">
+                                        <button class="text-primary hover:text-primary/80 mr-2" title="配置"><i class="fa fa-cogs"></i></button>
+                                        <button class="text-secondary hover:text-secondary/80 mr-2" title="引用模板"><i class="fa fa-file-text-o"></i></button>
+                                        <button class="text-accent hover:text-accent/80 mr-2" title="跳转"><i class="fa fa-exchange"></i></button>
+                                        <button class="text-blue-500 hover:text-blue-400 mr-2" title="流程检查"><i class="fa fa-check-circle-o"></i></button>
+                                        <button class="text-purple-500 hover:text-purple-400 mr-2" title="流程审核"><i class="fa fa-gavel"></i></button>
+                                        <button class="text-yellow-500 hover:text-yellow-400 mr-2" title="调试"><i class="fa fa-bug"></i></button>
+                                        <button class="text-red-500 hover:text-red-400" title="剧本测试"><i class="fa fa-play-circle-o"></i></button>
+                                    </td>
+                                {% elif '用户' in level2_name or '权限' in level2_name %}
+                                    <td class="data-td">{{ item.id }}</td>
+                                    <td class="data-td">{{ item.name }}</td>
+                                    <td class="data-td">{{ item.email }}</td>
+                                    <td class="data-td">{{ item.role }}</td>
+                                    <td class="data-td">
+                                        <span class="px-2 py-1 rounded-full text-xs {{ 'bg-green-500' if item.status == '活跃' else 'bg-red-500' if item.status == '禁用' else 'bg-yellow-500' }}">{{ item.status }}</span>
+                                    </td>
+                                    <td class="data-td">
+                                        <button class="text-primary hover:text-primary/80 mr-2"><i class="fa fa-edit"></i></button>
+                                        <button class="text-red-500 hover:text-red-400"><i class="fa fa-trash"></i></button>
+                                    </td>
+                                {% elif '数据' in level2_name or '统计' in level2_name %}
+                                    <td class="data-td">{{ item.month }}</td>
+                                    <td class="data-td">{{ item.value }}</td>
+                                    <td class="data-td">{{ (item.value / 1000 * 100).toFixed(2) }}%</td>
+                                    <td class="data-td">
+                                        <button class="text-primary hover:text-primary/80"><i class="fa fa-bar-chart"></i></button>
+                                    </td>
+                                {% else %}
+                                    <td class="data-td">{{ item.id }}</td>
+                                    <td class="data-td">{{ item.name }}</td>
+                                    <td class="data-td">{{ item.description }}</td>
+                                    <td class="data-td">
+                                        <div class="w-full bg-gray-700 rounded-full h-2.5">
+                                            <div class="bg-secondary h-2.5 rounded-full" style="width: {% if item.progress is defined and item.progress is number %}{{ item.progress }}{% else %}0{% endif %}%"></div>
+                                        </div>
+                                        <span class="text-xs text-gray-400">{% if item.progress is defined %}{{ item.progress }}{% else %}0{% endif %}%</span>
+                                    </td>
+                                    <td class="data-td">
+                                        <span class="px-2 py-1 rounded-full text-xs {{ 'bg-green-500' if item.status == '已完成' else 'bg-blue-500' if item.status == '进行中' else 'bg-gray-500' }}">{{ item.status }}</span>
+                                    </td>
+                                    <td class="data-td">
+                                        <button class="text-primary hover:text-primary/80 mr-2"><i class="fa fa-edit"></i></button>
+                                        <button class="text-red-500 hover:text-red-400"><i class="fa fa-trash"></i></button>
+                                    </td>
+                                {% endif %}
+                            </tr>
+                            {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通用浮窗组件 -->
+    <div id="modal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center">
+        <div class="bg-dark-card rounded-lg shadow-xl w-full max-w-md p-6 m-4">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
+                <h3 id="modal-title" class="text-xl font-semibold text-white">功能浮窗</h3>
+                <button id="close-modal" class="text-gray-400 hover:text-white transition-colors">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            <div id="modal-content" class="text-gray-300 mb-6">
+                <!-- 浮窗内容将通过JavaScript动态插入 -->
+            </div>
+            <div class="flex justify-end gap-3">
+                <button id="cancel-modal" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors">取消</button>
+                <button id="confirm-modal" class="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 浮窗控制函数
+        function showModal(title, content) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-content').innerHTML = content;
+            document.getElementById('modal').classList.remove('hidden');
+            document.getElementById('modal').classList.add('flex');
+            document.body.classList.add('overflow-hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+            document.getElementById('modal').classList.remove('flex');
+            document.body.classList.remove('overflow-hidden');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // 关闭浮窗事件
+            document.getElementById('close-modal').addEventListener('click', closeModal);
+            document.getElementById('cancel-modal').addEventListener('click', closeModal);
+            document.getElementById('confirm-modal').addEventListener('click', closeModal);
+
+            // 点击浮窗外部关闭
+            document.getElementById('modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeModal();
+                }
+            });
+            // 搜索和过滤功能
+            const searchInput = document.getElementById('search-input');
+            const filterSelect = document.getElementById('filter-select');
+            const dataRows = document.querySelectorAll('.data-row');
+            const noResults = document.getElementById('noResults');
+
+            // 会话流程功能按钮事件
+              {% if level2_name == '会话流程' %}
+                // 配置按钮
+            document.querySelectorAll('button[title="配置"]').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const row = this.closest('tr');
+                        const sessionId = row.querySelector('td:first-child').textContent;
+                        showModal('会话配置', `
+                            <div class="space-y-4">
+                                <p>会话ID: <span class="font-medium text-primary">${sessionId}</span></p>
+                                <p>此功能允许您配置会话的各种参数和属性。</p>
+                                <div class="p-3 bg-gray-800 rounded-lg">
+                                    <h4 class="font-medium mb-2">可配置项:</h4>
+                                    <ul class="list-disc list-inside space-y-1">
+                                        <li>基本信息设置</li>
+                                        <li>流程节点配置</li>
+                                        <li>条件分支设置</li>
+                                        <li>响应模板管理</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        `);
+                    });
+                });
+
+                // 引用模板按钮
+                document.querySelectorAll('button[title="引用模板"]').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const row = this.closest('tr');
+                        const sessionId = row.querySelector('td:first-child').textContent;
+                        showModal('引用模板', `
+                            <div class="space-y-4">
+                                <p>会话ID: <span class="font-medium text-primary">${sessionId}</span></p>
+                                <p>选择要引用的模板类型:</p>
+                                <div class="grid grid-cols-2 gap-3 mt-2">
+                                    <div class="p-3 bg-gray-800 rounded-lg cursor-pointer hover:bg-gray-700 transition-colors">
+                                        <i class="fa fa-file-text-o text-accent mr-2"></i>标准模板
+                                    </div>
+                                    <div class="p-3 bg-gray-800 rounded-lg cursor-pointer hover:bg-gray-700 transition-colors">
+                                        <i class="fa fa-file-text-o text-accent mr-2"></i>快捷回复
+                                    </div>
+                                    <div class="p-3 bg-gray-800 rounded-lg cursor-pointer hover:bg-gray-700 transition-colors">
+                                        <i class="fa fa-file-text-o text-accent mr-2"></i>常见问题
+                                    </div>
+                                    <div class="p-3 bg-gray-800 rounded-lg cursor-pointer hover:bg-gray-700 transition-colors">
+                                        <i class="fa fa-file-text-o text-accent mr-2"></i>业务流程
+                                    </div>
+                                </div>
+                            </div>
+                        `);
+                    });
+                });
+
+                // 跳转按钮
+                document.querySelectorAll('button[title="跳转"]').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const row = this.closest('tr');
+                        const sessionId = row.querySelector('td:first-child').textContent;
+                        showModal('跳转会话', `
+                            <div class="space-y-4">
+                                <p>会话ID: <span class="font-medium text-primary">${sessionId}</span></p>
+                                <p>选择跳转目标:</p>
+                                <div class="space-y-2 mt-2">
+                                    <div class="flex items-center p-3 bg-gray-800 rounded-lg cursor-pointer hover:bg-gray-700 transition-colors">
+                                        <i class="fa fa-arrow-right text-secondary mr-3"></i>
+                                        <span>会话详情页面</span>
+                                    </div>
+                                    <div class="flex items-center p-3 bg-gray-800 rounded-lg cursor-pointer hover:bg-gray-700 transition-colors">
+                                        <i class="fa fa-arrow-right text-secondary mr-3"></i>
+                                        <span>历史记录页面</span>
+                                    </div>
+                                    <div class="flex items-center p-3 bg-gray-800 rounded-lg cursor-pointer hover:bg-gray-700 transition-colors">
+                                        <i class="fa fa-arrow-right text-secondary mr-3"></i>
+                                        <span>数据分析页面</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `);
+                    });
+                });
+
+                // 流程检查按钮
+                document.querySelectorAll('button[title="流程检查"]').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const row = this.closest('tr');
+                        const sessionId = row.querySelector('td:first-child').textContent;
+                        showModal('流程检查', `
+                            <div class="space-y-4">
+                                <p>会话ID: <span class="font-medium text-primary">${sessionId}</span></p>
+                                <div class="p-3 bg-gray-800 rounded-lg">
+                                    <h4 class="font-medium mb-2">检查结果:</h4>
+                                    <div class="flex items-center mb-2 text-green-500">
+                                        <i class="fa fa-check-circle mr-2"></i>
+                                        <span>流程结构完整</span>
+                                    </div>
+                                    <div class="flex items-center mb-2 text-green-500">
+                                        <i class="fa fa-check-circle mr-2"></i>
+                                        <span>节点配置正确</span>
+                                    </div>
+                                    <div class="flex items-center text-yellow-500">
+                                        <i class="fa fa-exclamation-triangle mr-2"></i>
+                                        <span>建议优化: 添加更多分支条件</span>
+                                    </div>
+                                </div>
+                                <button class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center justify-center">
+                                    <i class="fa fa-download mr-2"></i>下载检查报告
+                                </button>
+                            </div>
+                        `);
+                    });
+                });
+
+                // 流程审核按钮
+                document.querySelectorAll('button[title="流程审核"]').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const row = this.closest('tr');
+                        const sessionId = row.querySelector('td:first-child').textContent;
+                        showModal('流程审核', `
+                            <div class="space-y-4">
+                                <p>会话ID: <span class="font-medium text-primary">${sessionId}</span></p>
+                                <div class="space-y-3 mt-2">
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1">审核状态</label>
+                                        <select class="w-full bg-dark-input border border-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+                                            <option value="pending">待审核</option>
+                                            <option value="approved">已通过</option>
+                                            <option value="rejected">已拒绝</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1">审核意见</label>
+                                        <textarea class="w-full bg-dark-input border border-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary h-24"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        `);
+                    });
+                });
+
+                // 调试按钮
+                document.querySelectorAll('button[title="调试"]').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const row = this.closest('tr');
+                        const sessionId = row.querySelector('td:first-child').textContent;
+                        showModal('会话调试', `
+                            <div class="space-y-4">
+                                <p>会话ID: <span class="font-medium text-primary">${sessionId}</span></p>
+                                <p>调试模式已启动，以下是最近5条日志:</p>
+                                <div class="bg-black p-3 rounded-lg text-sm font-mono text-green-400 h-32 overflow-y-auto space-y-1">
+                                    <div>[2023-11-08 14:32:15] 会话开始</div>
+                                    <div>[2023-11-08 14:32:16] 加载配置成功</div>
+                                    <div>[2023-11-08 14:32:17] 进入节点: 欢迎语</div>
+                                    <div>[2023-11-08 14:32:18] 检测到用户输入</div>
+                                    <div>[2023-11-08 14:32:20] 跳转至节点: 问题解答</div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button class="flex-1 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition-colors flex items-center justify-center">
+                                        <i class="fa fa-play mr-2"></i>开始调试
+                                    </button>
+                                    <button class="flex-1 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors flex items-center justify-center">
+                                        <i class="fa fa-refresh mr-2"></i>刷新日志
+                                    </button>
+                                </div>
+                            </div>
+                        `);
+                    });
+                });
+
+                // 剧本测试按钮
+                document.querySelectorAll('button[title="剧本测试"]').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const row = this.closest('tr');
+                        const sessionId = row.querySelector('td:first-child').textContent;
+                        showModal('剧本测试', `
+                            <div class="space-y-4">
+                                <p>会话ID: <span class="font-medium text-primary">${sessionId}</span></p>
+                                <div class="border border-gray-700 rounded-lg overflow-hidden">
+                                    <div class="bg-gray-800 p-3 border-b border-gray-700">
+                                        <h4 class="font-medium">剧本测试模拟器</h4>
+                                    </div>
+                                    <div class="p-4 bg-black h-40 overflow-y-auto space-y-4">
+                                        <div class="flex items-start gap-3">
+                                            <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white flex-shrink-0">
+                                                <i class="fa fa-robot"></i>
+                                            </div>
+                                            <div class="bg-gray-800 rounded-lg p-3 max-w-[80%]">
+                                                <p>您好！欢迎使用智能客服系统。请问有什么可以帮助您的？</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-start gap-3 justify-end">
+                                            <div class="bg-gray-700 rounded-lg p-3 max-w-[80%]">
+                                                <p>我想咨询一下账户问题</p>
+                                            </div>
+                                            <div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-white flex-shrink-0">
+                                                <i class="fa fa-user"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="p-3 border-t border-gray-700 flex items-center gap-2">
+                                        <input type="text" placeholder="输入测试内容..." class="flex-1 bg-dark-input border border-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+                                        <button class="w-10 h-10 bg-primary hover:bg-primary/90 text-white rounded-full flex items-center justify-center transition-colors">
+                                            <i class="fa fa-paper-plane"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `);
+                    });
+                });
+            {% endif %}
+
+            // 确保元素存在
+            if (searchInput && filterSelect) {
+                // 添加防抖处理
+                function debounce(func, delay) {
+                    let timeout;
+                    return function() {
+                        const context = this;
+                        const args = arguments;
+                        clearTimeout(timeout);
+                        timeout = setTimeout(() => func.apply(context, args), delay);
+                    };
+                }
+
+                function filterData() {
+                    const searchTerm = searchInput.value.toLowerCase();
+                    const filterValue = filterSelect.value;
+                    let hasVisibleRows = false;
+
+                    dataRows.forEach(row => {
+                        const cells = row.querySelectorAll('td');
+                        let matchesSearch = false;
+                        let matchesFilter = true;
+
+                        // 检查是否匹配搜索词
+                        cells.forEach(cell => {
+                            if (cell.textContent.toLowerCase().includes(searchTerm)) {
+                                matchesSearch = true;
+                            }
+                        });
+
+                        // 检查是否匹配筛选条件
+                        if (filterValue !== 'all') {
+                            const statusCell = row.querySelector('td:nth-child(5) span') || row.querySelector('td:nth-child(4)');
+                            if (statusCell && !statusCell.textContent.includes(filterValue)) {
+                                matchesFilter = false;
+                            }
+                        }
+
+                        // 显示或隐藏行
+                        if (matchesSearch && matchesFilter) {
+                            row.style.display = '';
+                            hasVisibleRows = true;
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+
+                    // 显示或隐藏无结果提示
+                    if (noResults) {
+                        noResults.style.display = hasVisibleRows ? 'none' : 'block';
+                    }
+                }
+
+                const debouncedFilterData = debounce(filterData, 300);
+                searchInput.addEventListener('input', debouncedFilterData);
+                filterSelect.addEventListener('change', filterData);
+
+                // 初始化时执行一次过滤
+                filterData();
+            } else {
+                console.error('搜索或过滤元素未找到');
+            }
+
+            // 如果是数据统计模块，初始化图表
+            {% if '数据' in level2_name or '统计' in level2_name %}
+                document.addEventListener('DOMContentLoaded', function() {
+                    try {
+                        const ctx = document.getElementById('dataChart');
+                        if (ctx) {
+                            const labels = [];
+                            const values = [];
+
+                            {% for item in sample_data %}
+                            labels.push('{{ item.month|tojson }}');
+                            values.push({{ item.value|int }});
+                            {% endfor %}
+
+                            const chart = new Chart(ctx, {
+                                type: 'line',
+                                data: {
+                                    labels: labels,
+                                    datasets: [{
+                                        label: '{{ level2_name }}数据',
+                                        data: values,
+                                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                                        borderColor: 'rgba(59, 130, 246, 1)',
+                                        borderWidth: 2,
+                                        tension: 0.3,
+                                        fill: true
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                            grid: {
+                                                color: 'rgba(255, 255, 255, 0.1)'
+                                            },
+                                            ticks: {
+                                                color: 'rgba(255, 255, 255, 0.7)'
+                                            }
+                                        },
+                                        x: {
+                                            grid: {
+                                                color: 'rgba(255, 255, 255, 0.1)'
+                                            },
+                                            ticks: {
+                                                color: 'rgba(255, 255, 255, 0.7)'
+                                            }
+                                        }
+                                    },
+                                    plugins: {
+                                        legend: {
+                                            labels: {
+                                                color: 'rgba(255, 255, 255, 0.7)'
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    } catch (error) {
+                        console.error('图表初始化失败:', error);
+                    }
+                });
+            {% endif %}
+
+
+            // 页面加载动画
+            setTimeout(() => {
+                document.body.classList.add('loaded');
+            }, 100);
+        });
+    </script>
+</body>
+</html>

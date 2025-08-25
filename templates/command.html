@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>接口指令管理</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 自定义 Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#10b981',
+                        accent: '#8b5cf6',
+                        danger: '#ef4444',
+                        warning: '#f59e0b',
+                        info: '#06b6d4',
+                        'dark-bg': '#111827',
+                        'dark-card': '#1f2937',
+                        'dark-input': '#374151',
+                        'dark-border': '#4b5563',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <!-- 自定义工具类 -->
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .transition-bg {
+                transition: background-color 0.3s ease;
+            }
+            .transition-all-custom {
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .shadow-custom {
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+            .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+            }
+            .scrollbar-hide {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+        }
+    </style>
+    <style>
+        body {
+            background-color: #111827;
+            font-family: 'Inter', sans-serif;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        body.loaded {
+            opacity: 1;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .hover-scale:hover {
+            transform: scale(1.02);
+        }
+    </style>
+</head>
+<body class="text-gray-200 min-h-screen flex flex-col">
+    <!-- 顶部导航 -->
+    <header class="bg-dark-card shadow-md z-30 sticky top-0">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <h1 class="text-xl font-bold text-white">接口指令管理系统</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="relative">
+                    <input type="text" placeholder="全局搜索..." class="bg-dark-input border border-gray-700 rounded-lg px-4 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary w-64">
+                    <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"></i>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i class="fa fa-bell-o text-gray-400 hover:text-white cursor-pointer transition-colors"></i>
+                    <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center cursor-pointer hover:bg-primary/90 transition-colors">
+                        <span class="font-medium text-white">用户</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="flex-1 container mx-auto px-4 py-6">
+        <!-- 面包屑导航 -->
+        <nav class="mb-6 text-sm">
+            <ol class="flex items-center gap-2">
+                <li><a href="/" class="text-gray-400 hover:text-primary transition-colors">首页</a></li>
+                <li><i class="fa fa-chevron-right text-xs text-gray-500"></i></li>
+                <li><a href="/module/NGD智能客服对话模块" class="text-gray-400 hover:text-primary transition-colors">NGD智能客服对话模块</a></li>
+                <li><i class="fa fa-chevron-right text-xs text-gray-500"></i></li>
+                <li><span class="text-primary font-medium">接口指令</span></li>
+            </ol>
+        </nav>
+
+        <!-- 页面标题和操作按钮 -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <div>
+                <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-white mb-1">接口指令管理</h2>
+                <p class="text-gray-400">管理和维护系统中的接口指令内容及相关配置</p>
+            </div>
+            <div class="flex gap-3 w-full sm:w-auto flex-wrap">
+                <button id="import-command-btn" class="px-4 py-2 bg-secondary hover:bg-secondary/90 text-white rounded-lg transition-all-custom flex items-center justify-center gap-2 flex-1 sm:flex-none">
+                    <i class="fa fa-upload"></i>导入Excel
+                </button>
+                <button id="export-command-btn" class="px-4 py-2 bg-accent hover:bg-accent/90 text-white rounded-lg transition-all-custom flex items-center justify-center gap-2 flex-1 sm:flex-none">
+                    <i class="fa fa-download"></i>导出Excel
+                </button>
+                <button id="add-command-btn" class="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-all-custom flex items-center justify-center gap-2 flex-1 sm:flex-none">
+                    <i class="fa fa-plus"></i>新增指令
+                </button>
+            </div>
+        </div>
+
+        <!-- 多级目录和筛选 -->
+        <div class="bg-dark-card rounded-lg p-4 mb-6 shadow-custom hover-scale transition-all-custom">
+            <div class="flex flex-col lg:flex-row gap-6">
+                <!-- 多级目录 -->
+                <div class="w-full lg:w-1/3">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-medium text-lg text-white">接口分类</h3>
+                        <button id="manage-categories-btn" class="text-sm text-primary hover:text-primary/80 transition-colors">管理分类</button>
+                    </div>
+                    <div class="bg-dark-bg rounded-lg p-3 max-h-80 overflow-y-auto scrollbar-hide">
+                        <ul id="category-tree" class="space-y-1">
+                            {% if category_data %}
+                                {% for category in category_data %}
+                                    <li class="category-item">
+                                        <div class="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-dark-card transition-colors cursor-pointer {{ 'bg-primary/20 text-primary' if category.id == current_category_id }}"
+                                            onclick="switchCategory('{{ category.id }}')">
+                                            <span class="flex items-center gap-2">{{ category.name }}</span>
+                                            {% if category.children %}
+                                                <i class="fa fa-angle-down text-xs transition-transform"></i>
+                                            {% endif %}
+                                        </div>
+                                        {% if category.children %}
+                                            <ul class="pl-6 space-y-1 mt-1">
+                                                {% for sub_category in category.children %}
+                                                    <li>
+                                                        <div class="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-dark-card transition-colors cursor-pointer {{ 'bg-primary/20 text-primary' if sub_category.id == current_sub_category_id }}"
+                                                            onclick="switchSubCategory('{{ sub_category.id }}')">
+                                                            <span>{{ sub_category.name }}</span>
+                                                        </div>
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
+                            {% else %}
+                                <li class="text-center py-6 text-gray-500">
+                                    暂无分类数据
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 筛选条件 -->
+                <div class="w-full lg:w-2/3">
+                    <div class="flex flex-wrap gap-4 items-center">
+                        <div class="flex-1 min-w-[200px]">
+                            <label class="block text-sm font-medium text-gray-400 mb-1">指令状态</label>
+                            <select id="command-status-filter" class="w-full bg-dark-input border border-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+                                <option value="all">全部状态</option>
+                                <option value="active">已启用</option>
+                                <option value="inactive">已禁用</option>
+                                <option value="draft">草稿</option>
+                            </select>
+                        </div>
+                        <div class="flex-1 min-w-[200px]">
+                            <label class="block text-sm font-medium text-gray-400 mb-1">指令类型</label>
+                            <select id="command-type-filter" class="w-full bg-dark-input border border-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+                                <option value="all">全部类型</option>
+                                <option value="system">系统指令</option>
+                                <option value="custom">自定义指令</option>
+                            </select>
+                        </div>
+                        <div class="flex-1 min-w-[200px]">
+                            <label class="block text-sm font-medium text-gray-400 mb-1">搜索指令</label>
+                            <div class="relative">
+                                <input type="text" id="command-search-input" placeholder="搜索指令名称或描述..." class="w-full bg-dark-input border border-gray-700 rounded-lg px-4 py-2 pl-10 focus:outline-none focus:ring-2 focus:ring-primary">
+                                <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 接口指令列表 -->
+        <div class="bg-dark-card rounded-lg shadow-custom overflow-hidden hover-scale transition-all-custom">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="bg-dark-bg border-b border-gray-700 text-left">
+                            <th class="px-6 py-4 text-sm font-semibold text-gray-400">指令ID</th>
+                            <th class="px-6 py-4 text-sm font-semibold text-gray-400">指令名称</th>
+                            <th class="px-6 py-4 text-sm font-semibold text-gray-400">分类</th>
+                            <th class="px-6 py-4 text-sm font-semibold text-gray-400">状态</th>
+                            <th class="px-6 py-4 text-sm font-semibold text-gray-400">类型</th>
+                            <th class="px-6 py-4 text-sm font-semibold text-gray-400">创建时间</th>
+                            <th class="px-6 py-4 text-sm font-semibold text-gray-400">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="command-table-body">
+                        {% if command_data %}
+                            {% for command in command_data %}
+                                <tr class="data-row border-b border-gray-700 hover:bg-dark-bg/50 transition-colors">
+                                    <td class="px-6 py-4 text-sm">{{ command.id }}</td>
+                                    <td class="px-6 py-4 text-sm max-w-xs truncate" title="{{ command.name }}">{{ command.name }}</td>
+                                    <td class="px-6 py-4 text-sm">{{ command.category }} / {{ command.sub_category }}</td>
+                                    <td class="px-6 py-4 text-sm">
+                                        {% if command.status == 'active' %}
+                                            <span class="px-2 py-1 bg-green-500/20 text-green-500 rounded-full text-xs font-medium">已启用</span>
+                                        {% elif command.status == 'inactive' %}
+                                            <span class="px-2 py-1 bg-red-500/20 text-red-500 rounded-full text-xs font-medium">已禁用</span>
+                                        {% elif command.status == 'draft' %}
+                                            <span class="px-2 py-1 bg-yellow-500/20 text-yellow-500 rounded-full text-xs font-medium">草稿</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 text-sm">
+                                        {% if command.type == 'system' %}
+                                            <span class="px-2 py-1 bg-blue-500/20 text-blue-500 rounded-full text-xs font-medium">系统指令</span>
+                                        {% elif command.type == 'custom' %}
+                                            <span class="px-2 py-1 bg-purple-500/20 text-purple-500 rounded-full text-xs font-medium">自定义指令</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-400">{{ command.created_at }}</td>
+                                    <td class="px-6 py-4 text-sm">
+                                        <div class="flex gap-2">
+                                            <button class="text-blue-500 hover:text-blue-400 transition-colors" title="查看详情" onclick="viewCommand('{{ command.id }}')">
+                                                <i class="fa fa-eye"></i>
+                                            </button>
+                                            <button class="text-yellow-500 hover:text-yellow-400 transition-colors" title="编辑指令" onclick="editCommand('{{ command.id }}')">
+                                                <i class="fa fa-pencil"></i>
+                                            </button>
+                                            <button class="text-green-500 hover:text-green-400 transition-colors" title="参数配置" onclick="configureParams('{{ command.id }}')">
+                                                <i class="fa fa-sliders"></i>
+                                            </button>
+                                            <button class="text-orange-500 hover:text-orange-400 transition-colors" title="测试指令" onclick="testCommand('{{ command.id }}')">
+                                                <i class="fa fa-play-circle"></i>
+                                            </button>
+                                            <button class="text-red-500 hover:text-red-400 transition-colors" title="删除指令" onclick="deleteCommand('{{ command.id }}')">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <!-- 演示数据 -->
+                            {% for i in range(1, 21) %}
+                                <tr class="data-row border-b border-gray-700 hover:bg-dark-bg/50 transition-colors">
+                                    <td class="px-6 py-4 text-sm">{{ 'CMD' + (1000 + i)|string }}</td>
+                                    <td class="px-6 py-4 text-sm max-w-xs truncate" title="测试指令名称 {{ i }}">测试指令名称 {{ i }}</td>
+                                    <td class="px-6 py-4 text-sm">{{ ['系统工具', '数据服务', '外部API'][i % 3] }} / {{ ['基础功能', '高级功能', '扩展功能'][i % 3] }}</td>
+                                    <td class="px-6 py-4 text-sm">
+                                        {% if i % 3 == 0 %}
+                                            <span class="px-2 py-1 bg-green-500/20 text-green-500 rounded-full text-xs font-medium">已启用</span>
+                                        {% elif i % 3 == 1 %}
+                                            <span class="px-2 py-1 bg-red-500/20 text-red-500 rounded-full text-xs font-medium">已禁用</span>
+                                        {% else %}
+                                            <span class="px-2 py-1 bg-yellow-500/20 text-yellow-500 rounded-full text-xs font-medium">草稿</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 text-sm">
+                                        {% if i % 2 == 0 %}
+                                            <span class="px-2 py-1 bg-blue-500/20 text-blue-500 rounded-full text-xs font-medium">系统指令</span>
+                                        {% else %}
+                                            <span class="px-2 py-1 bg-purple-500/20 text-purple-500 rounded-full text-xs font-medium">自定义指令</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-400">{{ '2023-11-' + ((i % 28) + 1)|string }} 10:30:{{ (i % 60)|string }}</td>
+                                    <td class="px-6 py-4 text-sm">
+                                        <div class="flex gap-2">
+                                            <button class="text-blue-500 hover:text-blue-400 transition-colors" title="查看详情" onclick="viewCommand('{{ 'CMD' + (1000 + i)|string }}')">
+                                                <i class="fa fa-eye"></i>
+                                            </button>
+                                            <button class="text-yellow-500 hover:text-yellow-400 transition-colors" title="编辑指令" onclick="editCommand('{{ 'CMD' + (1000 + i)|string }}')">
+                                                <i class="fa fa-pencil"></i>
+                                            </button>
+                                            <button class="text-green-500 hover:text-green-400 transition-colors" title="参数配置" onclick="configureParams('{{ 'CMD' + (1000 + i)|string }}')">
+                                                <i class="fa fa-sliders"></i>
+                                            </button>
+                                            <button class="text-orange-500 hover:text-orange-400 transition-colors" title="测试指令" onclick="testCommand('{{ 'CMD' + (1000 + i)|string }}')">
+                                                <i class="fa fa-play-circle"></i>
+                                            </button>
+                                            <button class="text-red-500 hover:text-red-400 transition-colors" title="删除指令" onclick="deleteCommand('{{ 'CMD' + (1000 + i)|string }}')">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+            <!-- 分页 -->
+            <div class="px-6 py-4 border-t border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="text-sm text-gray-400">
+                    显示 1 到 20 条，共 50 条记录
+                </div>
+                <div class="flex gap-1">
+                    <button class="px-3 py-1 rounded border border-gray-700 hover:bg-dark-bg transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <i class="fa fa-angle-double-left"></i>
+                    </button>
+                    <button class="px-3 py-1 rounded border border-gray-700 bg-primary text-white">1</button>
+                    <button class="px-3 py-1 rounded border border-gray-700 hover:bg-dark-bg transition-colors">2</button>
+                    <button class="px-3 py-1 rounded border border-gray-700 hover:bg-dark-bg transition-colors">3</button>
+                    <button class="px-3 py-1 rounded border border-gray-700 hover:bg-dark-bg transition-colors">
+                        <i class="fa fa-angle-double-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- JavaScript -->
+    <script>
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            // 显示页面
+            document.body.classList.add('loaded');
+
+            // 初始化分类折叠功能
+            initCategories();
+
+            // 初始化筛选功能
+            initFilters();
+
+            // 初始化按钮事件
+            initButtons();
+        });
+
+        // 初始化分类树
+        function initCategories() {
+            const categoryItems = document.querySelectorAll('.category-item');
+            categoryItems.forEach(item => {
+                const parent = item.querySelector('div[onclick^="switchCategory"]');
+                if (parent && parent.nextElementSibling && parent.nextElementSibling.tagName === 'UL') {
+                    const icon = parent.querySelector('i.fa-angle-down');
+                    parent.addEventListener('click', function(e) {
+                        const subList = this.nextElementSibling;
+                        if (subList.style.display === 'none') {
+                            subList.style.display = 'block';
+                            if (icon) icon.style.transform = 'rotate(180deg)';
+                        } else {
+                            subList.style.display = 'none';
+                            if (icon) icon.style.transform = 'rotate(0)';
+                        }
+                    });
+                    // 默认展开第一个分类
+                    if (item === categoryItems[0]) {
+                        const subList = parent.nextElementSibling;
+                        if (subList) subList.style.display = 'block';
+                        if (icon) icon.style.transform = 'rotate(180deg)';
+                    } else {
+                        const subList = parent.nextElementSibling;
+                        if (subList) subList.style.display = 'none';
+                    }
+                }
+            });
+        }
+
+        // 初始化筛选功能
+        function initFilters() {
+            const statusFilter = document.getElementById('command-status-filter');
+            const typeFilter = document.getElementById('command-type-filter');
+            const searchInput = document.getElementById('command-search-input');
+
+            function applyFilters() {
+                const status = statusFilter.value;
+                const type = typeFilter.value;
+                const searchTerm = searchInput.value.toLowerCase();
+
+                const rows = document.querySelectorAll('#command-table-body tr');
+                let visibleCount = 0;
+
+                rows.forEach(row => {
+                    const statusCell = row.querySelector('td:nth-child(4) span')?.textContent.toLowerCase() || '';
+                    const typeCell = row.querySelector('td:nth-child(5) span')?.textContent.toLowerCase() || '';
+                    const nameCell = row.querySelector('td:nth-child(2)')?.textContent.toLowerCase() || '';
+
+                    const statusMatch = status === 'all' || statusCell.includes(status);
+                    const typeMatch = type === 'all' || typeCell.includes(type);
+                    const searchMatch = searchTerm === '' || nameCell.includes(searchTerm);
+
+                    if (statusMatch && typeMatch && searchMatch) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                // 更新分页信息
+                document.querySelector('.text-sm.text-gray-400').textContent = `显示 1 到 ${visibleCount > 20 ? 20 : visibleCount} 条，共 ${visibleCount} 条记录`;
+            }
+
+            statusFilter.addEventListener('change', applyFilters);
+            typeFilter.addEventListener('change', applyFilters);
+            searchInput.addEventListener('input', applyFilters);
+        }
+
+        // 初始化按钮事件
+        function initButtons() {
+            // 导入按钮
+            document.getElementById('import-command-btn').addEventListener('click', function() {
+                alert('导入功能开发中');
+            });
+
+            // 导出按钮
+            document.getElementById('export-command-btn').addEventListener('click', function() {
+                alert('导出功能开发中');
+            });
+
+            // 新增按钮
+            document.getElementById('add-command-btn').addEventListener('click', function() {
+                alert('新增功能开发中');
+            });
+
+            // 管理分类按钮
+            document.getElementById('manage-categories-btn').addEventListener('click', function() {
+                alert('分类管理功能开发中');
+            });
+        }
+
+        // 切换分类
+        function switchCategory(categoryId, subCategoryId = null) {
+            // 在实际应用中，这里应该发起API请求获取对应分类的数据
+            console.log('切换到分类:', categoryId, '子分类:', subCategoryId);
+
+            // 高亮当前选中的分类
+            document.querySelectorAll('.category-item > div').forEach(item => {
+                item.classList.remove('bg-primary/20', 'text-primary');
+            });
+            document.querySelectorAll('.subcategory-item').forEach(item => {
+                item.classList.remove('bg-primary/20', 'text-primary');
+            });
+
+            const activeItem = document.querySelector(`.category-item > div[onclick^="switchCategory(\'${categoryId}\\'"]`);
+            if (activeItem) {
+                activeItem.classList.add('bg-primary/20', 'text-primary');
+            }
+
+            // 如果有子分类，高亮子分类
+            if (subCategoryId) {
+                const activeSubItem = document.querySelector(`.subcategory-item[onclick="switchCategory(\'${categoryId}\\',\'${subCategoryId}\\')"]`);
+                if (activeSubItem) {
+                    activeSubItem.classList.add('bg-primary/20', 'text-primary');
+                }
+            }
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initCategories();
+            initFilters();
+            initButtons();
+        });
+    </script>
+</body>
+</html>

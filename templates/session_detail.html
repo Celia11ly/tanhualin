@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ level1_name }} - 会话详情</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#8B5CF6',
+                        dark: '#121212',
+                        'dark-card': '#1E1E1E'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 批量操作工具栏
+            const sessionCheckboxes = document.querySelectorAll('.session-checkbox');
+            const batchActions = document.getElementById('batch-actions');
+            const selectAllCheckbox = document.getElementById('select-all-sessions');
+            const batchExportBtn = document.getElementById('batch-export-btn');
+            const selectedCount = document.getElementById('selected-count');
+            const searchInput = document.getElementById('session-search');
+            const timeFilter = document.getElementById('time-filter');
+            const statusFilter = document.getElementById('status-filter');
+
+            // 显示批量操作工具栏
+            if (sessionCheckboxes.length > 0) {
+                batchActions.classList.remove('hidden');
+            }
+
+            // 更新选中计数和批量导出按钮状态
+            function updateSelectionStatus() {
+                const checkedBoxes = document.querySelectorAll('.session-checkbox:checked');
+                const count = checkedBoxes.length;
+                selectedCount.textContent = `已选择: ${count}`;
+
+                if (count > 0) {
+                    batchExportBtn.disabled = false;
+                    batchExportBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                } else {
+                    batchExportBtn.disabled = true;
+                    batchExportBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            }
+
+            // 单个复选框点击事件
+            sessionCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateSelectionStatus);
+            });
+
+            // 全选复选框点击事件
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', function() {
+                    sessionCheckboxes.forEach(checkbox => {
+                        checkbox.checked = this.checked;
+                    });
+                    updateSelectionStatus();
+                });
+            }
+
+            // 批量导出按钮点击事件
+            if (batchExportBtn) {
+                batchExportBtn.addEventListener('click', function() {
+                    // 模拟导出过程
+                    const notification = document.createElement('div');
+                    notification.className = 'fixed bottom-4 right-4 bg-blue-500 text-white px-4 py-2 rounded shadow-lg z-50 transform transition-all duration-300 translate-y-0';
+                    notification.textContent = '正在导出会话记录...';
+                    document.body.appendChild(notification);
+
+                    // 2秒后显示下载链接
+                    setTimeout(() => {
+                        notification.innerHTML = '导出成功！<a href="#" class="underline ml-1">点击下载</a>';
+                        notification.querySelector('a').addEventListener('click', function(e) {
+                            e.preventDefault();
+                            // 模拟文件下载
+                            const blob = new Blob(['{"sessions": []}'], {type: 'application/json'});
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'sessions_export.json';
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                            notification.textContent = '已成功下载导出文件';
+
+                            // 3秒后隐藏提示
+                            setTimeout(() => {
+                                notification.classList.add('translate-y-20');
+                                setTimeout(() => document.body.removeChild(notification), 300);
+                            }, 3000);
+                        });
+                    }, 2000);
+                });
+            }
+
+            // 防抖函数
+            function debounce(func, delay) {
+                let timeoutId;
+                return function() {
+                    const context = this;
+                    const args = arguments;
+                    clearTimeout(timeoutId);
+                    timeoutId = setTimeout(() => {
+                        func.apply(context, args);
+                    }, delay);
+                };
+            }
+
+            // 筛选会话函数
+            function filterSessions() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const timeValue = timeFilter.value;
+                const statusValue = statusFilter.value;
+                const sessionCards = document.querySelectorAll('[data-session-card]');
+                let hasVisibleCards = false;
+
+                sessionCards.forEach(card => {
+                    const sessionName = card.querySelector('[data-session-name]').textContent.toLowerCase();
+                    const sessionTime = card.getAttribute('data-session-time');
+                    const sessionStatus = card.getAttribute('data-session-status');
+
+                    const matchesSearch = sessionName.includes(searchTerm);
+                    const matchesTime = timeValue === 'all' || (
+                        timeValue === 'today' && sessionTime.includes(getFormattedDate()) ||
+                        timeValue === 'yesterday' && sessionTime.includes(getFormattedDate(-1)) ||
+                        timeValue === 'week' && isWithinLastWeek(sessionTime)
+                    );
+                    const matchesStatus = statusValue === 'all' || sessionStatus === statusValue;
+
+                    if (matchesSearch && matchesTime && matchesStatus) {
+                        card.classList.remove('hidden');
+                        hasVisibleCards = true;
+                    } else {
+                        card.classList.add('hidden');
+                    }
+                });
+
+                // 显示或隐藏无结果提示
+                const noResults = document.getElementById('no-search-results');
+                if (noResults) {
+                    if (hasVisibleCards) {
+                        noResults.classList.add('hidden');
+                    } else {
+                        noResults.classList.remove('hidden');
+                    }
+                }
+            }
+
+            // 获取格式化日期
+            function getFormattedDate(daysOffset = 0) {
+                const date = new Date();
+                date.setDate(date.getDate() + daysOffset);
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+
+            // 检查是否在过去一周内
+            function isWithinLastWeek(dateString) {
+                const date = new Date(dateString);
+                const oneWeekAgo = new Date();
+                oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+                return date >= oneWeekAgo && date <= new Date();
+            }
+
+            // 初始化搜索和筛选功能
+            if (searchInput && timeFilter && statusFilter) {
+                const debouncedFilter = debounce(filterSessions, 300);
+                searchInput.addEventListener('input', debouncedFilter);
+                timeFilter.addEventListener('change', filterSessions);
+                statusFilter.addEventListener('change', filterSessions);
+            }
+
+            // 生成模拟会话数据
+            function generateMockSessions() {
+                const statuses = ['active', 'completed', 'abandoned'];
+                const statusLabels = {
+                    'active': '进行中',
+                    'completed': '已完成',
+                    'abandoned': '已放弃'
+                };
+                const statusColors = {
+                    'active': 'blue',
+                    'completed': 'green',
+                    'abandoned': 'gray'
+                };
+
+                const sessionNames = [
+                    '产品需求讨论', '技术方案评审', '客户反馈会议', '项目进度汇报',
+                    '团队周会', 'UI设计讨论', 'BUG分析会议', '功能演示'
+                ];
+
+                return Array.from({length: 10}, (_, i) => {
+                    // 随机生成过去7天内的日期
+                    const randomDays = Math.floor(Math.random() * 7);
+                    const randomHours = Math.floor(Math.random() * 24);
+                    const randomMinutes = Math.floor(Math.random() * 60);
+                    const date = new Date();
+                    date.setDate(date.getDate() - randomDays);
+                    date.setHours(randomHours);
+                    date.setMinutes(randomMinutes);
+
+                    const status = statuses[Math.floor(Math.random() * statuses.length)];
+                    const name = sessionNames[Math.floor(Math.random() * sessionNames.length)];
+
+                    return {
+                        id: `session-${Date.now()}-${i}`,
+                        name: name,
+                        date: date.toLocaleString('zh-CN', {year: 'numeric', month: '2-digit', day: '2-digit'}),
+                        time: date.toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'}),
+                        fullDateTime: date.toISOString().split('T')[0], // 用于筛选
+                        status: status,
+                        statusLabel: statusLabels[status],
+                        statusColor: statusColors[status],
+                        details: `这是${name}的详细内容，包含了会议的主要讨论点和决策结果。`,
+                        participants: ['张三', '李四', '王五'].slice(0, 1 + Math.floor(Math.random() * 2)).join(', ')
+                    };
+                });
+            }
+
+            // 渲染会话卡片
+            function renderSessions(sessions) {
+                const sessionsContainer = document.getElementById('sessions-container');
+                if (!sessionsContainer) return;
+
+                sessionsContainer.innerHTML = '';
+
+                sessions.forEach(session => {
+                    const sessionCard = document.createElement('div');
+                    sessionCard.className = 'bg-white dark:bg-dark-card rounded-lg shadow-md p-5 mb-4 relative transition-all duration-300 hover:shadow-lg';
+                    sessionCard.setAttribute('data-session-card', '');
+                    sessionCard.setAttribute('data-session-time', session.fullDateTime);
+                    sessionCard.setAttribute('data-session-status', session.status);
+
+                    sessionCard.innerHTML = `
+                        <div class="absolute top-4 left-4">
+                            <input type="checkbox" class="session-checkbox rounded text-primary focus:ring-primary" data-session-id="${session.id}">
+                        </div>
+                        <div class="flex justify-between items-start mb-4 pl-8">
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white" data-session-name="${session.name}">${session.name}</h3>
+                            <span class="text-xs inline-flex items-center px-2 py-1 rounded-full bg-${session.statusColor}-100 text-${session.statusColor}-800 dark:bg-${session.statusColor}-900 dark:text-${session.statusColor}-200">
+                                ${session.statusLabel}
+                            </span>
+                        </div>
+                        <div class="pl-8 mb-3">
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-2 flex items-center">
+                                <i class="fa fa-clock-o mr-2"></i> ${session.date} ${session.time}
+                            </p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-2 flex items-center">
+                                <i class="fa fa-users mr-2"></i> ${session.participants}
+                            </p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">${session.details}</p>
+                        </div>
+                        <div class="flex justify-end items-center pt-3 border-t border-gray-200 dark:border-gray-700 pl-8">
+                            <button class="text-primary hover:text-primary/80 dark:text-primary dark:hover:text-primary/80 transition-colors duration-200 flex items-center" data-action="view" data-session-id="${session.id}">
+                                <i class="fa fa-eye mr-1"></i> 查看详情
+                            </button>
+                        </div>
+                    `;
+                    sessionsContainer.appendChild(sessionCard);
+
+                    // 添加查看详情事件
+                    sessionCard.querySelector('[data-action="view"]').addEventListener('click', function() {
+                        const sessionId = this.getAttribute('data-session-id');
+                        viewSessionDetails(sessionId);
+                    });
+
+                    // 添加淡入动画
+                    setTimeout(() => {
+                        sessionCard.style.opacity = '1';
+                        sessionCard.style.transform = 'translateY(0)';
+                    }, 10);
+                });
+            }
+
+            // 查看会话详情
+            function viewSessionDetails(sessionId) {
+                // 这里模拟查看详情，实际应用中可能需要从服务器获取数据
+                const modal = document.createElement('div');
+                modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+                modal.innerHTML = `
+                    <div class="bg-white dark:bg-dark-card rounded-lg shadow-xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto transform transition-all">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white">会话详情</h3>
+                            <button id="close-detail" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors duration-200">
+                                <i class="fa fa-times text-xl"></i>
+                            </button>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">会话名称</h4>
+                                <p class="text-lg font-semibold text-gray-900 dark:text-white">产品需求讨论</p>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">会话时间</h4>
+                                <p class="text-gray-700 dark:text-gray-300">2023-11-15 14:30</p>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">参与者</h4>
+                                <p class="text-gray-700 dark:text-gray-300">张三, 李四, 王五</p>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">会话状态</h4>
+                                <span class="inline-flex items-center px-2 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                    已完成
+                                </span>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">会话内容</h4>
+                                <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 text-gray-700 dark:text-gray-300 space-y-4 h-48 overflow-y-auto">
+                                    <div class="flex items-start space-x-2">
+                                        <div class="bg-blue-100 dark:bg-blue-900 rounded-full p-2 text-blue-600 dark:text-blue-300 mt-1">
+                                            <i class="fa fa-user"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="text-sm font-medium text-gray-900 dark:text-white">张三</p>
+                                            <p class="text-sm">我们需要讨论新版APP的首页设计</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-start space-x-2">
+                                        <div class="bg-green-100 dark:bg-green-900 rounded-full p-2 text-green-600 dark:text-green-300 mt-1">
+                                            <i class="fa fa-user"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="text-sm font-medium text-gray-900 dark:text-white">李四</p>
+                                            <p class="text-sm">我觉得应该增加一个轮播图展示推荐内容</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-start space-x-2">
+                                        <div class="bg-purple-100 dark:bg-purple-900 rounded-full p-2 text-purple-600 dark:text-purple-300 mt-1">
+                                            <i class="fa fa-user"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="text-sm font-medium text-gray-900 dark:text-white">王五</p>
+                                            <p class="text-sm">同意，另外导航栏的颜色也应该调整，使其更加醒目</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-start space-x-2">
+                                        <div class="bg-blue-100 dark:bg-blue-900 rounded-full p-2 text-blue-600 dark:text-blue-300 mt-1">
+                                            <i class="fa fa-user"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="text-sm font-medium text-gray-900 dark:text-white">张三</p>
+                                            <p class="text-sm">好的，我们会在下次迭代中实现这些需求</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                                <button class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800">
+                                    <i class="fa fa-download mr-1"></i> 导出
+                                </button>
+                                <button id="close-detail-btn" class="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90">
+                                    关闭
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+
+                // 关闭按钮事件
+                modal.querySelectorAll('#close-detail, #close-detail-btn').forEach(button => {
+                    button.addEventListener('click', function() {
+                        modal.remove();
+                    });
+                });
+            }
+
+            // 页面加载完成后初始化
+            const mockSessions = generateMockSessions();
+            renderSessions(mockSessions);
+        });
+    </script>
+</head>
+<body class="bg-gray-50 dark:bg-dark min-h-screen font-sans session-detail">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <header class="mb-8">
+            <a href="/" class="inline-block text-primary mb-4"><i class="fa fa-arrow-left mr-2"></i>返回首页</a>
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">{{ level1_name }}</h1>
+            <p class="text-gray-500 dark:text-gray-400">查看和管理会话记录</p>
+        </header>
+
+        <!-- 批量操作工具栏 -->
+        <div id="batch-actions" class="flex flex-wrap justify-between items-center mb-6 p-4 bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 hidden">
+            <div class="flex items-center space-x-4 mb-3 sm:mb-0">
+                <input type="checkbox" id="select-all-sessions" class="w-5 h-5 text-primary focus:ring-primary border-gray-300 dark:border-gray-600 rounded">
+                <label for="select-all-sessions" class="text-sm text-gray-700 dark:text-gray-300">全选</label>
+                <span id="selected-count" class="text-sm text-gray-500 dark:text-gray-400">已选择: 0</span>
+            </div>
+            <div class="flex flex-wrap gap-3">
+                <button id="batch-export-btn" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors duration-200 flex items-center opacity-50 cursor-not-allowed" disabled>
+                    <i class="fa fa-download mr-1"></i> 导出所选
+                </button>
+                <button class="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-md transition-colors duration-200 flex items-center">
+                    <i class="fa fa-search-plus mr-1"></i> 高级搜索
+                </button>
+            </div>
+        </div>
+
+        <!-- 搜索和筛选 -->
+        <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
+            <div class="relative w-full sm:w-auto flex-grow">
+                <input type="text" id="session-search" placeholder="搜索会话..." class="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent w-full sm:w-80 bg-white dark:bg-dark-card text-gray-900 dark:text-white">
+                <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            </div>
+            <div class="flex flex-wrap gap-3">
+                <select id="time-filter" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-dark-card text-gray-900 dark:text-white">
+                    <option value="all">全部时间</option>
+                    <option value="today">今天</option>
+                    <option value="yesterday">昨天</option>
+                    <option value="week">近7天</option>
+                </select>
+                <select id="status-filter" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-dark-card text-gray-900 dark:text-white">
+                    <option value="all">全部状态</option>
+                    <option value="active">进行中</option>
+                    <option value="completed">已完成</option>
+                    <option value="abandoned">已放弃</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 会话列表 -->
+        <div id="sessions-container" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- 会话卡片将通过JavaScript动态生成 -->
+        </div>
+
+        <!-- 无搜索结果提示 -->
+        <div id="no-search-results" class="hidden text-center py-12 col-span-full">
+            <div class="text-gray-400 text-5xl mb-4"><i class="fa fa-search"></i></div>
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">没有找到匹配的会话记录</h3>
+            <p class="text-gray-500 dark:text-gray-400">请尝试使用其他搜索词或清除筛选条件</p>
+        </div>
+    </div>
+</body>
+</html>

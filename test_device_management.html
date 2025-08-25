@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Management Test</title>
+    <style>
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .bg-success\/10 { background-color: rgba(16, 185, 129, 0.1); }
+        .text-success { color: #10b981; }
+        .bg-warning\/10 { background-color: rgba(245, 158, 11, 0.1); }
+        .text-warning { color: #f59e0b; }
+        .bg-gray-100 { background-color: #f3f4f6; }
+        .text-gray-800 { color: #1f2937; }
+        .text-primary { color: #3b82f6; }
+        .text-danger { color: #ef4444; }
+    </style>
+</head>
+<body>
+    <div class="p-6">
+        <h2 class="text-lg font-bold mb-4">Current Devices</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <input type="checkbox" id="select-all" class="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary">
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Device ID</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP Address</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Firmware</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="device-table-body" class="bg-white divide-y divide-gray-200">
+                    <!-- 动态生成的设备列表将在这里插入 -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // 演示数据
+        const devices = [
+            { id: 1, deviceId: 'DVC-2023-001', ip: '192.168.1.101', status: 'online', firmware: 'v1.2.3' },
+            { id: 2, deviceId: 'DVC-2023-002', ip: '192.168.1.102', status: 'online', firmware: 'v1.2.3' },
+            { id: 3, deviceId: 'DVC-2023-003', ip: '192.168.1.103', status: 'offline', firmware: 'v1.2.2' },
+            { id: 4, deviceId: 'DVC-2023-004', ip: '192.168.1.104', status: 'online', firmware: 'v1.2.3' },
+            { id: 5, deviceId: 'DVC-2023-005', ip: '192.168.1.105', status: 'warning', firmware: 'v1.2.3' }
+        ];
+
+        // 渲染设备列表
+        function renderDeviceList() {
+            const tableBody = document.getElementById('device-table-body');
+
+            // 清空表格
+            tableBody.innerHTML = '';
+
+            // 打印表头信息用于调试
+            const headerRow = document.querySelector('thead tr');
+            const headers = Array.from(headerRow.querySelectorAll('th')).map(th => th.textContent.trim());
+            console.log('表头列:', headers);
+
+            // 渲染每个设备行
+            devices.forEach((device, index) => {
+                // 直接创建单元格
+                const row = document.createElement('tr');
+                row.className = 'table-row';
+
+                // 创建选择框单元格
+                const checkboxCell = document.createElement('td');
+                checkboxCell.className = 'px-6 py-4 whitespace-nowrap';
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'device-checkbox h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary';
+                checkbox.dataset.id = device.id;
+                checkboxCell.appendChild(checkbox);
+                row.appendChild(checkboxCell);
+
+                // 创建Device ID单元格
+                const idCell = document.createElement('td');
+                idCell.className = 'px-6 py-4 whitespace-nowrap';
+                idCell.textContent = device.deviceId;
+                row.appendChild(idCell);
+
+                // 创建IP Address单元格
+                const ipCell = document.createElement('td');
+                ipCell.className = 'px-6 py-4 whitespace-nowrap';
+                ipCell.textContent = device.ip;
+                row.appendChild(ipCell);
+
+                // 创建Status单元格
+                const statusCell = document.createElement('td');
+                statusCell.className = 'px-6 py-4 whitespace-nowrap';
+                let statusClass = 'bg-gray-100 text-gray-800';
+                let statusText = 'Offline';
+                if (device.status === 'online') {
+                    statusClass = 'bg-success/10 text-success';
+                    statusText = 'Online';
+                } else if (device.status === 'warning') {
+                    statusClass = 'bg-warning/10 text-warning';
+                    statusText = 'Warning';
+                }
+                const statusSpan = document.createElement('span');
+                statusSpan.className = `px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}`;
+                statusSpan.textContent = statusText;
+                statusCell.appendChild(statusSpan);
+                row.appendChild(statusCell);
+
+                // 创建Firmware单元格
+                const firmwareCell = document.createElement('td');
+                firmwareCell.className = 'px-6 py-4 whitespace-nowrap';
+                firmwareCell.textContent = device.firmware;
+                row.appendChild(firmwareCell);
+
+                // 创建Actions单元格
+                const actionsCell = document.createElement('td');
+                actionsCell.className = 'px-6 py-4 whitespace-nowrap text-sm font-medium';
+
+                const editButton = document.createElement('button');
+                editButton.className = 'text-primary hover:text-primary/80 mr-3';
+                editButton.textContent = 'Edit';
+                actionsCell.appendChild(editButton);
+
+                const deleteButton = document.createElement('button');
+                deleteButton.className = 'text-danger hover:text-danger/80';
+                deleteButton.textContent = 'Delete';
+                actionsCell.appendChild(deleteButton);
+
+                row.appendChild(actionsCell);
+
+                // 添加到表格
+                tableBody.appendChild(row);
+
+                // 调试信息
+                console.log(`设备 ${index+1} 数据:`);
+                console.log(`- Device ID: ${device.deviceId}`);
+                console.log(`- IP: ${device.ip}`);
+                console.log(`- Status: ${statusText}`);
+                console.log(`- Firmware: ${device.firmware}`);
+            });
+
+            // 验证列数
+            const headerCount = headers.length;
+            const firstRowCellCount = document.querySelector('tbody tr')?.querySelectorAll('td').length || 0;
+            console.log(`表头列数: ${headerCount}, 数据列数: ${firstRowCellCount}`);
+
+            // 如果列数不匹配，显示警告
+            if (headerCount !== firstRowCellCount) {
+                console.warn('警告: 表头列数与数据列数不匹配!');
+            }
+        }
+
+        // 页面加载完成后渲染设备列表
+        document.addEventListener('DOMContentLoaded', renderDeviceList);
+    </script>
+</body>
+</html>

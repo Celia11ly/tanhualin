@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>机器人闲聊管理</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #000;
+            color: #fff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #121212;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        .back-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .back-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            background-color: #333;
+            color: white;
+        }
+        .back-btn:hover {
+            background-color: #555;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        h1 {
+            margin: 0;
+            color: #333;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-primary {
+            background-color: #4285f4;
+            color: white;
+        }
+        .btn-success {
+            background-color: #34a853;
+            color: white;
+        }
+        .btn-warning {
+            background-color: #fbbc05;
+            color: white;
+        }
+        .btn-danger {
+            background-color: #ea4335;
+            color: white;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            color: #555;
+        }
+        .tab.active {
+            border-bottom: 2px solid #4285f4;
+            color: #4285f4;
+            font-weight: bold;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .search-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .search-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        th {
+            background-color: #f9f9f9;
+            font-weight: bold;
+            color: #333;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-active {
+            background-color: #e6f4ea;
+            color: #34a853;
+        }
+        .status-inactive {
+            background-color: #f8f9fa;
+            color: #5f6368;
+        }
+        .status-draft {
+            background-color: #fff8e1;
+            color: #fbbc05;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 100%;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .modal-title {
+            margin: 0;
+            color: #333;
+        }
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #555;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        .form-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .form-textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            min-height: 100px;
+            resize: vertical;
+        }
+        .form-select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            gap: 5px;
+        }
+        .pagination-btn {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #fff;
+            cursor: pointer;
+        }
+        .pagination-btn.active {
+            background-color: #4285f4;
+            color: white;
+            border-color: #4285f4;
+        }
+        .pagination-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <div class="back-buttons">
+            <button class="back-btn" onclick="history.back()"><i class="fas fa-arrow-left"></i> 返回上一级</button>
+            <button class="back-btn" onclick="window.location.href='/'"><i class="fas fa-home"></i> 返回首页</button>
+        </div>
+
+        <div class="header">
+            <h1><i class="fas fa-comments"></i> 机器人闲聊管理</h1>
+            <div class="button-group">
+                <button class="btn btn-primary" id="addChatBtn"><i class="fas fa-plus"></i> 新增闲聊</button>
+                <button class="btn btn-success" id="importBtn"><i class="fas fa-upload"></i> 导入Excel</button>
+                <button class="btn btn-warning" id="exportBtn"><i class="fas fa-download"></i> 导出Excel</button>
+                <button class="btn btn-primary" id="addPersonalityBtn"><i class="fas fa-user-plus"></i> 新增人设</button>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" data-tab="chat">闲聊管理</div>
+            <div class="tab" data-tab="personality">人设管理</div>
+        </div>
+
+        <!-- 闲聊管理 -->
+        <div class="tab-content active" id="chatContent">
+            <div class="search-bar">
+                <input type="text" class="search-input" placeholder="搜索问题或回答...">
+                <select class="filter-select">
+                    <option value="all">全部类型</option>
+                    <option value="greeting">问候</option>
+                    <option value="farewell">告别</option>
+                    <option value="small_talk">闲聊</option>
+                    <option value="joke">笑话</option>
+                    <option value="weather">天气</option>
+                    <option value="recommendation">推荐</option>
+                </select>
+                <select class="filter-select">
+                    <option value="all">全部状态</option>
+                    <option value="active">启用</option>
+                    <option value="inactive">禁用</option>
+                    <option value="draft">草稿</option>
+                </select>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>问题</th>
+                        <th>回答</th>
+                        <th>类型</th>
+                        <th>状态</th>
+                        <th>创建时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="chatTableBody">
+                    {% for chat in sample_data.chats %}
+                    <tr>
+                        <td>{{ chat.id }}</td>
+                        <td>{{ chat.question }}</td>
+                        <td>{{ chat.answer }}</td>
+                        <td>{{ chat.type }}</td>
+                        <td>
+                            <span class="status-badge status-{{ chat.status }}">
+                                {% if chat.status == 'active' %}启用
+                                {% elif chat.status == 'inactive' %}禁用
+                                {% else %}草稿{% endif %}
+                            </span>
+                        </td>
+                        <td>{{ chat.created_at }}</td>
+                        <td class="action-buttons">
+                            <button class="btn btn-primary btn-sm" onclick="editChat('{{ chat.id }}')"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteChat('{{ chat.id }}')"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="pagination">
+                <button class="pagination-btn" disabled><i class="fas fa-chevron-left"></i></button>
+                <button class="pagination-btn active">1</button>
+                <button class="pagination-btn disabled"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+
+        <!-- 人设管理 -->
+        <div class="tab-content" id="personalityContent">
+            <div class="search-bar">
+                <input type="text" class="search-input" placeholder="搜索人设名称...">
+                <select class="filter-select">
+                    <option value="all">全部状态</option>
+                    <option value="active">启用</option>
+                    <option value="inactive">禁用</option>
+                </select>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>名称</th>
+                        <th>描述</th>
+                        <th>状态</th>
+                        <th>创建时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="personalityTableBody">
+                    {% for personality in sample_data.personalities %}
+                    <tr>
+                        <td>{{ personality.id }}</td>
+                        <td>{{ personality.name }}</td>
+                        <td>{{ personality.description }}</td>
+                        <td>
+                            <span class="status-badge status-{{ personality.status }}">
+                                {% if personality.status == 'active' %}启用
+                                {% else %}禁用{% endif %}
+                            </span>
+                        </td>
+                        <td>{{ personality.created_at }}</td>
+                        <td class="action-buttons">
+                            <button class="btn btn-primary btn-sm" onclick="editPersonality('{{ personality.id }}')"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-danger btn-sm" onclick="deletePersonality('{{ personality.id }}')"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 新增/编辑闲聊模态框 -->
+    <div class="modal" id="chatModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="chatModalTitle">新增闲聊</h3>
+                <button class="close-modal" onclick="closeModal('chatModal')">&times;</button>
+            </div>
+            <form id="chatForm">
+                <input type="hidden" id="chatId">
+                <div class="form-group">
+                    <label class="form-label" for="chatQuestion">问题</label>
+                    <input type="text" class="form-input" id="chatQuestion" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="chatAnswer">回答</label>
+                    <textarea class="form-textarea" id="chatAnswer" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="chatType">类型</label>
+                    <select class="form-select" id="chatType" required>
+                        <option value="greeting">问候</option>
+                        <option value="farewell">告别</option>
+                        <option value="small_talk">闲聊</option>
+                        <option value="joke">笑话</option>
+                        <option value="weather">天气</option>
+                        <option value="recommendation">推荐</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="chatStatus">状态</label>
+                    <select class="form-select" id="chatStatus" required>
+                        <option value="active">启用</option>
+                        <option value="inactive">禁用</option>
+                        <option value="draft">草稿</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn" onclick="closeModal('chatModal')">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 新增/编辑人设模态框 -->
+    <div class="modal" id="personalityModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="personalityModalTitle">新增人设</h3>
+                <button class="close-modal" onclick="closeModal('personalityModal')">&times;</button>
+            </div>
+            <form id="personalityForm">
+                <input type="hidden" id="personalityId">
+                <div class="form-group">
+                    <label class="form-label" for="personalityName">名称</label>
+                    <input type="text" class="form-input" id="personalityName" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="personalityDescription">描述</label>
+                    <textarea class="form-textarea" id="personalityDescription" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="personalityStatus">状态</label>
+                    <select class="form-select" id="personalityStatus" required>
+                        <option value="active">启用</option>
+                        <option value="inactive">禁用</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn" onclick="closeModal('personalityModal')">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 切换标签
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // 移除所有标签的active类
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                // 添加当前标签的active类
+                tab.classList.add('active');
+                // 隐藏所有内容
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                // 显示对应内容
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(`${tabId}Content`).classList.add('active');
+            });
+        });
+
+        // 打开模态框
+        function openModal(modalId, title) {
+            document.getElementById(modalId).style.display = 'flex';
+            if (title) {
+                document.getElementById(`${modalId}Title`).textContent = title;
+            }
+        }
+
+        // 关闭模态框
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+            // 重置表单
+            const form = document.getElementById(`${modalId.replace('Modal', 'Form')}`);
+            if (form) {
+                form.reset();
+                document.getElementById(`${modalId.replace('Modal', 'Id')}`).value = '';
+            }
+        }
+
+        // 新增闲聊
+        document.getElementById('addChatBtn').addEventListener('click', () => {
+            openModal('chatModal', '新增闲聊');
+        });
+
+        // 新增人设
+        document.getElementById('addPersonalityBtn').addEventListener('click', () => {
+            openModal('personalityModal', '新增人设');
+        });
+
+        // 编辑闲聊
+        function editChat(id) {
+            // 在实际应用中，这里会根据id获取数据并填充表单
+            openModal('chatModal', '编辑闲聊');
+            document.getElementById('chatId').value = id;
+            // 模拟数据填充
+            document.getElementById('chatQuestion').value = `闲聊问题${id.substring(2)}`;
+            document.getElementById('chatAnswer').value = `这是闲聊问题${id.substring(2)}的回答。`;
+        }
+
+        // 删除闲聊
+        function deleteChat(id) {
+            if (confirm('确定要删除这条闲聊吗？')) {
+                // 在实际应用中，这里会发送删除请求
+                const row = document.querySelector(`#chatTableBody tr td:first-child:contains('${id}')`).parentElement;
+                row.remove();
+            }
+        }
+
+        // 编辑人设
+        function editPersonality(id) {
+            // 在实际应用中，这里会根据id获取数据并填充表单
+            openModal('personalityModal', '编辑人设');
+            document.getElementById('personalityId').value = id;
+            // 模拟数据填充
+            document.getElementById('personalityName').value = `人设${id.substring(2)}`;
+            document.getElementById('personalityDescription').value = `这是一个人设${id.substring(2)}的描述。`;
+        }
+
+        // 删除人设
+        function deletePersonality(id) {
+            if (confirm('确定要删除这个人设吗？')) {
+                // 在实际应用中，这里会发送删除请求
+                const row = document.querySelector(`#personalityTableBody tr td:first-child:contains('${id}')`).parentElement;
+                row.remove();
+            }
+        }
+
+        // 提交闲聊表单
+        document.getElementById('chatForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            // 在实际应用中，这里会发送保存请求
+            alert('闲聊保存成功！');
+            closeModal('chatModal');
+        });
+
+        // 提交人设表单
+        document.getElementById('personalityForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            // 在实际应用中，这里会发送保存请求
+            alert('人设保存成功！');
+            closeModal('personalityModal');
+        });
+
+        // 导入Excel
+        document.getElementById('importBtn').addEventListener('click', () => {
+            // 创建一个隐藏的文件输入元素
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.xlsx, .xls';
+            fileInput.style.display = 'none';
+            document.body.appendChild(fileInput);
+
+            // 触发文件选择对话框
+            fileInput.click();
+
+            // 监听文件选择事件
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    // 在实际应用中，这里会发送文件到服务器
+                    alert(`已选择文件: ${file.name}\nExcel导入功能将在后端实现。`);
+                }
+                // 移除文件输入元素
+                document.body.removeChild(fileInput);
+            });
+        });
+
+        // 导出Excel
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            // 在实际应用中，这里会请求服务器生成Excel文件并下载
+            alert('Excel导出功能将在后端实现。');
+        });
+
+        // 扩展contains方法
+        Element.prototype.contains = function(text) {
+            return this.textContent.includes(text);
+        };
+    </script>
+</body>
+</html>
