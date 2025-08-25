@@ -4,7 +4,7 @@ services:
   - type: web
     name: flask-ngd-app
     env: python
-    runtime: python-3.9.7
+    runtime: python3.9.7
     buildCommand: python3 -m pip install --upgrade pip && python3 -m pip install -r requirements.txt
     startCommand: python3 -m gunicorn app:app
     envVars:
