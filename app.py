@@ -9,7 +9,10 @@ from io import BytesIO
 app = Flask(__name__)
 
 # 读取JSON数据
-with open('output.json', 'r', encoding='utf-8') as f:
+import os
+current_dir = os.path.dirname(os.path.abspath(__file__))
+json_path = os.path.join(current_dir, 'output.json')
+with open(json_path, 'r', encoding='utf-8') as f:
     data = json.load(f)
 
 # 处理数据，构建模块分层结构
